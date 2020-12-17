@@ -1,7 +1,7 @@
 import click
 import time
 import logging
-from table_columns import (
+from .table_columns import (
     det_col,
     obj_col,
     non_col,
@@ -51,7 +51,7 @@ def create_session():
     return spark
 
 
-def read_dataframes():
+def read_dataframes(spark):
     logging.info("Reading data sources")
     dataframes = {}
     for key in DATA_SOURCES.keys():
@@ -563,7 +563,16 @@ def save_prob(sel_prob, n_partitions, max_records_per_file, mode, output_dir):
 )
 @click.option("--npartitions", default=16, help="Number of dataframe partitions")
 @click.option("--real-threshold", default=1e-4, help="Threshold to filter gaia")
-def main(output_path, save_mode, max_records_per_file, npartitions, real_threshold):
+@click.option(
+    "--log",
+    "loglevel",
+    default="INFO",
+    help="log level to use",
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
+)
+def create_csv(
+    output_path, save_mode, max_records_per_file, npartitions, real_threshold, loglevel
+):
     """
     OUTPUT_PATH is the name of the path to store CSV files. OUTPUT_PATH can be a
     local directory or a URI. For example a S3 URI like s3a://ztf-historic-data/
@@ -579,7 +588,7 @@ def main(output_path, save_mode, max_records_per_file, npartitions, real_thresho
     # Pre configuration
     spark = create_session()
     # Read data sources
-    dfs = read_dataframes()
+    dfs = read_dataframes(spark)
     # Process data
     tt_det = (
         dfs["det"]
@@ -627,4 +636,4 @@ def main(output_path, save_mode, max_records_per_file, npartitions, real_thresho
 
 
 if __name__ == "__main__":
-    main()
+    create_csv()
