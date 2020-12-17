@@ -3,6 +3,7 @@ from pyspark import SparkConf
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, explode, coalesce, round
 import time
+import logging
 
 
 @click.command()
@@ -11,8 +12,20 @@ import time
 @click.argument("output_non_detections", type=str)
 @click.argument("schema_path", type=str)
 @click.option("--npartitions", "-n", default=300, help="Number of output parquet files")
+@click.option(
+    "--log",
+    "loglevel",
+    default="INFO",
+    help="log level to use",
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
+)
 def main(
-    source_avros, output_detections, output_non_detections, schema_path, npartitions
+    source_avros,
+    output_detections,
+    output_non_detections,
+    schema_path,
+    npartitions,
+    loglevel,
 ):
     """
     Partititon detection and non detections into parquet files
@@ -27,6 +40,11 @@ def main(
     OUTPUT_NON_DETECTIONS can be a local directory or a URI. For example a S3 URI like
     s3a://ztf-historic-data/detections
     """
+    numeric_level = getattr(logging, loglevel.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError("Invalid log level: %s" % loglevel)
+    logging.basicConfig(filename="fill_missing_fields.log", level=numeric_level)
+
     start = time.time()
 
     # CONFIG
@@ -104,7 +122,7 @@ def main(
     ).option("path", output_non_detections).saveAsTable("non_detections")
 
     total = time.time() - start
-    print("TOTAL_TIME=%s" % (str(total)))
+    logging.info("TOTAL_TIME=%s" % (str(total)))
 
 
 if __name__ == "__main__":
