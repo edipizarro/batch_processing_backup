@@ -1,4 +1,5 @@
 import click
+
 from pyspark import SparkConf
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, explode, coalesce, round
@@ -19,7 +20,7 @@ import logging
     help="log level to use",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
-def main(
+def partition_dets_ndets(
     source_avros,
     output_detections,
     output_non_detections,
@@ -126,4 +127,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    partition_dets_ndets()
