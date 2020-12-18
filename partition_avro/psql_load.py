@@ -1,7 +1,6 @@
 import click
 import os
 import time
-import psycopg2
 import glob
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
@@ -40,6 +39,8 @@ def execute_copy(file, con):
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
 def load_csv(csv_path, loglevel):
+    import psycopg2
+
     # Set logging level
     numeric_level = getattr(logging, loglevel.upper(), None)
     if not isinstance(numeric_level, int):

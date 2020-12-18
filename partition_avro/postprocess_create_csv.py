@@ -13,7 +13,6 @@ from .table_columns import (
     ref_col,
     xch_col,
 )
-
 from pyspark import SparkConf, SparkContext
 from pyspark.sql import SparkSession, Window, Row
 from pyspark.sql.types import IntegerType, DoubleType
@@ -44,6 +43,9 @@ DATA_SOURCES = {
 
 
 def create_session():
+    from pyspark import SparkConf, SparkContext
+    from pyspark.sql import SparkSession
+
     logging.info("Creating spark session")
     conf = SparkConf()
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
@@ -68,6 +70,12 @@ def read_dataframes(spark):
 
 
 def select_detections(df_det, tt_det):
+    from pyspark.sql.functions import (
+        col,
+        lit,
+    )
+    from pyspark.sql.types import IntegerType
+
     logging.info("Processing detections")
     data_det = (
         tt_det.select(
@@ -176,6 +184,9 @@ def select_detections(df_det, tt_det):
 
 
 def select_objects(df_obj):
+    from pyspark.sql.types import IntegerType
+    from pyspark.sql.functions import col
+
     logging.info("Processing objects")
     obj_col.remove("objectId")
     obj_col.remove("ndethist")
@@ -191,6 +202,8 @@ def select_objects(df_obj):
 
 
 def select_non_det(df_non):
+    from pyspark.sql.functions import col
+
     logging.info("Processing non detections")
     tt_non = df_non.withColumn("mjd", col("jd") - 2400000.5).drop("jd")
     sel_non = tt_non.select(*[col(c) for c in non_col])
@@ -198,6 +211,9 @@ def select_non_det(df_non):
 
 
 def select_ss(tt_det):
+    from pyspark.sql.functions import col
+    from pyspark.sql import Window
+
     logging.info("Processing ss")
     ss_col.remove("objectId")
     ss_col.remove("candid")
@@ -214,6 +230,8 @@ def select_ss(tt_det):
 
 
 def select_dataquality(tt_det):
+    from pyspark.sql.functions import col
+
     logging.info("Processing dataquality")
     qua_col.remove("objectId")
     qua_col.remove("candid")
@@ -224,6 +242,8 @@ def select_dataquality(tt_det):
 
 
 def select_magstats(df_mag):
+    from pyspark.sql.functions import col, lit
+
     logging.info("Processing magstats")
     data_mag = df_mag.withColumn("magsigma", lit("")).withColumn(
         "magsigma_corr", lit("")
@@ -233,6 +253,8 @@ def select_magstats(df_mag):
 
 
 def select_ps1(df_det, obj_cid_window):
+    from pyspark.sql.functions import col, countDistinct
+
     logging.info("Processing ps1")
     ps1_col.remove("objectId")
     ps1_col.remove("unique1")
@@ -284,6 +306,8 @@ def select_ps1(df_det, obj_cid_window):
 
 
 def select_gaia(tt_det, obj_cid_window, real_threshold):
+    from pyspark.sql.functions import col, countDistinct
+
     logging.info("Processing gaia")
     gaia_col.remove("objectId")
     gaia_col.remove("candid")
@@ -325,6 +349,9 @@ def select_gaia(tt_det, obj_cid_window, real_threshold):
 
 
 def select_ref(df_det):
+    from pyspark.sql.functions import col
+    from pyspark.sql import Window
+
     logging.info("Processing reference")
     ref_col.remove("objectId")
     ref_col.remove("rfid")
@@ -357,6 +384,8 @@ def select_xmatch(df_xch):
 
 
 def select_features(df_fea):
+    from pyspark.sql.functions import col, explode, struct, lit
+
     logging.info("Processing features")
     cols, dtypes = zip(*((c, t) for (c, t) in df_fea.dtypes if c not in ["oid"]))
     kvs = explode(
@@ -414,6 +443,8 @@ def select_features(df_fea):
 
 
 def select_prob(df_prob):
+    from pyspark.sql.functions import col, explode, struct, lit
+
     logging.info("Processing probabilities")
     cols_p, dtypes_p = zip(*((c, t) for (c, t) in df_prob.dtypes if c not in ["oid"]))
     kvs_p = explode(
@@ -577,6 +608,7 @@ def create_csv(
     OUTPUT_PATH is the name of the path to store CSV files. OUTPUT_PATH can be a
     local directory or a URI. For example a S3 URI like s3a://ztf-historic-data/
     """
+
     # Set logging level
     numeric_level = getattr(logging, loglevel.upper(), None)
     if not isinstance(numeric_level, int):
