@@ -21,8 +21,8 @@ from lc_correction.helpers import *
 )
 @click.option(
     "--file-format",
-    default="part-%s-d04f7f52-9773-4a13-a06b-55c7db613831-c000.snappy.parquet",
-    help="Parquet file name format. Id number should be replaced with %s. Default is part-%s-d04f7f52-9773-4a13-a06b-55c7db613831-c000.snappy.parquet",
+    default="part-{}-5d486975-47dd-4c9a-a90a-b142fda2c49e_{}.c000.snappy.parquet",
+    help="Parquet file name format. Id number should be replaced with {}. Default is part-{}-5d486975-47dd-4c9a-a90a-b142fda2c49e_{}.c000.snappy.parquet",
 )
 def main(
     corrected_dir,
