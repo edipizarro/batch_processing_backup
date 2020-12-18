@@ -15,8 +15,24 @@ from lc_correction.helpers import *
 @click.argument("node_id", type=str)
 @click.argument("job_id", type=str)
 @click.argument("logs_dir", type=str, default=".")
-@click.option("-v", "--version", default="bulk_version_0.0.1", help="Version of correction")
-def main(detections_dir, output_dir, partition, node_id, job_id, logs_dir, version):
+@click.option(
+    "-v", "--version", default="bulk_version_0.0.1", help="Version of correction"
+)
+@click.option(
+    "--file-format",
+    default="part-%s-d04f7f52-9773-4a13-a06b-55c7db613831-c000.snappy.parquet",
+    help="Parquet file name format. Id number should be replaced with %s. Default is part-%s-d04f7f52-9773-4a13-a06b-55c7db613831-c000.snappy.parquet",
+)
+def get_correction(
+    detections_dir,
+    output_dir,
+    partition,
+    node_id,
+    job_id,
+    logs_dir,
+    version,
+    file_format,
+):
     """
     Correct a set of detections indexed by object id.
 
@@ -32,10 +48,12 @@ def main(detections_dir, output_dir, partition, node_id, job_id, logs_dir, versi
 
     JOB_ID identifier of job in slurm
     """
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S')
-    files = sorted(os.listdir(detections_dir))
-    detection_file = files[partition]
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    detection_file = file_format % str(partition).zfill(5)
 
     logging.info(f"Opening detection file: {detection_file}")
     detections = pd.read_parquet(os.path.join(detections_dir, detection_file))
@@ -64,4 +82,4 @@ def main(detections_dir, output_dir, partition, node_id, job_id, logs_dir, versi
 
 
 if __name__ == "__main__":
-    main()
+    get_correction()
