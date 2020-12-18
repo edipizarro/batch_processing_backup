@@ -13,22 +13,6 @@ from .table_columns import (
     ref_col,
     xch_col,
 )
-from pyspark import SparkConf, SparkContext
-from pyspark.sql import SparkSession, Window, Row
-from pyspark.sql.types import IntegerType, DoubleType
-from pyspark.sql.functions import (
-    col,
-    lit,
-    countDistinct,
-    explode,
-    array,
-    struct,
-    when,
-    substring,
-    expr,
-    split,
-    dense_rank,
-)
 
 DATA_SOURCES = {
     "dfc": "s3a://ztf-historic-data/det",
