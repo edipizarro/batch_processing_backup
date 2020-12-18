@@ -24,6 +24,11 @@ from lc_correction.helpers import *
     default="part-%s-d04f7f52-9773-4a13-a06b-55c7db613831-c000.snappy.parquet",
     help="Parquet file name format. Id number should be replaced with %s. Default is part-%s-d04f7f52-9773-4a13-a06b-55c7db613831-c000.snappy.parquet",
 )
+@click.option(
+    "--format-times",
+    default=1,
+    help="Number of times the file_format has a string to be parsed. Example: 'my %s format %s' has value 2",
+)
 def main(
     corrected_dir,
     non_det_dir,
@@ -34,6 +39,7 @@ def main(
     logs_dir,
     version,
     file_format,
+    format_times,
 ):
     """
     Correct a set of detections indexed by object id.
@@ -56,7 +62,15 @@ def main(
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    detection_file = file_format % str(partition).zfill(5)
+    tup = (str(partition).zfill(5),)
+    if format_times > 1:
+        for i in range(format_times):
+            tup += tup
+
+    try:
+        detection_file = file_format % tup
+    except TypeError as e:
+        raise Exception("file_format and format_times not compatible")
 
     logging.info(f"Opening corrected detection file: {detection_file}")
     detections = pd.read_parquet(os.path.join(corrected_dir, detection_file))
