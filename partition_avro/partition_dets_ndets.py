@@ -1,8 +1,4 @@
 import click
-
-from pyspark import SparkConf
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, explode, coalesce, round
 import time
 import logging
 
@@ -41,6 +37,10 @@ def partition_dets_ndets(
     OUTPUT_NON_DETECTIONS can be a local directory or a URI. For example a S3 URI like
     s3a://ztf-historic-data/detections
     """
+    from pyspark import SparkConf
+    from pyspark.sql import SparkSession
+    from pyspark.sql.functions import col, explode, coalesce, round
+
     numeric_level = getattr(logging, loglevel.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: %s" % loglevel)
