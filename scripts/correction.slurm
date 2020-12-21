@@ -18,7 +18,7 @@ resources='/home/apps/astro/alercebroker/resources/'
 output='/home/apps/astro/alercebroker/historic_data'
 sleep `expr ${SLURM_ARRAY_TASK_ID} "*" 2`
 
-export AWS_ACCESS_KEY_ID=AKIAQO22GL4HDJM2U64G
-export AWS_SECRET_ACCESS_KEY=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
+export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
 
 python3 ../computing/get_correction.py $input $output ${SLURM_ARRAY_TASK_ID} ${SLURM_JOB_NODELIST} ${SLURM_ARRAY_JOB_ID} $resources --file-format $format
