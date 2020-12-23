@@ -19,5 +19,5 @@ dag = DAG(
 )
 
 emr_tasks = get_emr_tasks(dag)
-leftraru_tasks = get_leftraru_tasks(dag)
-emr_tasks[-1] >> leftraru_tasks[0]
+# leftraru_tasks = get_leftraru_tasks(dag)
+# emr_tasks[-1] >> leftraru_tasks[0]
