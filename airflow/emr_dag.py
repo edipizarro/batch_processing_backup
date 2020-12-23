@@ -6,32 +6,83 @@ from airflow.providers.amazon.aws.sensors.emr_job_flow import EmrJobFlowSensor
 
 SPARK_STEPS = [
     {
-        "Name": "calculate_pi",
+        "Name": "Partition Detections and Non Detections",
+        "ActionOnFailure": "TERMINATE_JOB_FLOW",
+        "HadoopJarStep": {
+            "Jar": "command-runner.jar",
+            "Args": [
+                "spark-submit",
+                "--conf",
+                "spark.pyspark.python=/usr/bin/python3.6",
+                "/tmp/batch_processing/main.py",
+                "partition-dets-ndets",
+                "s3a://ztf-avro/ztf_20180601_programid1/*.avro",
+                "detections",
+                "non_detections",
+                "/tmp/batch_processing/partition_avro/alert.avsc",
+            ],
+        },
+    },
+    {
+        "Name": "Copy detections to s3",
         "ActionOnFailure": "CONTINUE",
         "HadoopJarStep": {
             "Jar": "command-runner.jar",
-            "Args": ["/usr/lib/spark/bin/run-example", "SparkPi", "10"],
+            "Args": [
+                "s3-dist-cp",
+                "--dest=s3://ztf-historic-data/airflowtest/detections/",
+                "--src=hdfs:///detections",
+            ],
         },
-    }
+    },
+    {
+        "Name": "Copy detections to s3",
+        "ActionOnFailure": "CONTINUE",
+        "HadoopJarStep": {
+            "Jar": "command-runner.jar",
+            "Args": [
+                "s3-dist-cp",
+                "--dest=s3://ztf-historic-data/airflowtest/non-detections/",
+                "--src=hdfs:///non_detections",
+            ],
+        },
+    },
 ]
 
 JOB_FLOW_OVERRIDES = {
-    "Name": "PiCalc",
+    "Name": "AirflowTest",
     "ReleaseLabel": "emr-5.29.0",
+    "LogUri": "s3://alerce-airflow-logs/emr",
     "Instances": {
         "InstanceGroups": [
             {
                 "Name": "Master node",
                 "Market": "SPOT",
                 "InstanceRole": "MASTER",
-                "InstanceType": "m1.medium",
+                "InstanceType": "m5.xlarge",
                 "InstanceCount": 1,
-            }
+            },
+            {
+                "Name": "Compute node",
+                "Market": "SPOT",
+                "InstanceRole": "CORE",
+                "InstanceType": "m5.xlarge",
+                "InstanceCount": 1,
+            },
         ],
-        "KeepJobFlowAliveWhenNoSteps": False,
+        "KeepJobFlowAliveWhenNoSteps": True,
         "TerminationProtected": False,
+        "Ec2KeyName": "alerce",
     },
     "Steps": SPARK_STEPS,
+    "BootstrapActions": [
+        {
+            "Name": "Install software",
+            "ScriptBootstrapAction": {
+                "Path": "s3://alerce-static/emr/bootstrap-actions/emr_install_software.sh"
+            },
+        }
+    ],
     "JobFlowRole": "EMR_EC2_DefaultRole",
     "ServiceRole": "EMR_DefaultRole",
 }
