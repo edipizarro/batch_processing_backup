@@ -56,13 +56,20 @@ def partition_dets_ndets(
         schema = f.read()
 
     # READ AVROS
-    df = (
+    dfa = (
         spark.read.format("avro")
         .option("avroSchema", schema)
         .load(source_avros)
         .drop("cutoutScience")
         .drop("cutoutTemplate")
         .drop("cutoutDifference")
+    )
+    
+    dfa.write.format("parquet").option("path", "/output_temp_raw").saveAsTable("raw_paquet")
+    
+    # READ PARQUET
+    df = (
+        spark.read.load("/output_temp_raw")
         .repartition(npartitions, "objectId")
         .cache()
     )
