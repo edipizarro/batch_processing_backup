@@ -14,6 +14,8 @@ SPARK_STEPS = [
                 "spark-submit",
                 "--conf",
                 "spark.pyspark.python=/usr/bin/python3.6",
+                "--conf",
+                "spark.jars.packages=org.apache.spark:spark-avro_2.11:2.4.5",
                 "/tmp/batch_processing/main.py",
                 "partition-dets-ndets",
                 "s3a://ztf-avro/ztf_20180601_programid1/*.avro",
@@ -31,19 +33,19 @@ SPARK_STEPS = [
             "Args": [
                 "s3-dist-cp",
                 "--dest=s3://ztf-historic-data/airflowtest/detections/",
-                "--src=hdfs:///detections",
+                "--src=hdfs:///user/hadoop/detections/",
             ],
         },
     },
     {
-        "Name": "Copy detections to s3",
+        "Name": "Copy non detections to s3",
         "ActionOnFailure": "CONTINUE",
         "HadoopJarStep": {
             "Jar": "command-runner.jar",
             "Args": [
                 "s3-dist-cp",
                 "--dest=s3://ztf-historic-data/airflowtest/non-detections/",
-                "--src=hdfs:///non_detections",
+                "--src=hdfs:///user/hadoop/non_detections/",
             ],
         },
     },
@@ -70,11 +72,12 @@ JOB_FLOW_OVERRIDES = {
                 "InstanceCount": 1,
             },
         ],
-        "KeepJobFlowAliveWhenNoSteps": True,
+        "KeepJobFlowAliveWhenNoSteps": False,
         "TerminationProtected": False,
         "Ec2KeyName": "alerce",
     },
     "Steps": SPARK_STEPS,
+    "Applications": [{"Name": "Hadoop"}, {"Name": "Spark"}],
     "BootstrapActions": [
         {
             "Name": "Install software",
