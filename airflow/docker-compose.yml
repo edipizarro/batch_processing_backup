@@ -1,0 +1,41 @@
+version: '3.8'
+services:
+    postgres:
+        image: postgres
+        environment:
+            - POSTGRES_USER=airflow
+            - POSTGRES_PASSWORD=airflow
+            - POSTGRES_DB=airflow
+    scheduler:
+        build:
+          context: .
+        entrypoint: ./scripts/entrypoint_scheduler.sh
+        depends_on:
+            - postgres
+        env:
+            - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://<user>:<password>@postgres/<db>
+            - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+            - AIRFLOW_CONN_AWS_DEFAULT=aws://<aws_access_key>:<aws_secret_access_key>@
+            - AWS_DEFAULT_REGION=<region-name>
+        volumes:
+            - ./dags:/opt/airflow/dags
+            - ./logs:/opt/airflow/logs
+            - ./scripts:/opt/airflow/scripts
+    webserver:
+        build:
+          context: .
+        entrypoint: ./scripts/entrypoint_webserver.sh
+        depends_on:
+            - postgres
+            - scheduler
+        env:
+            - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://<user>:<password>@postgres/<db>
+            - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+            - AIRFLOW_CONN_AWS_DEFAULT=aws://<aws_access_key>:<aws_secret_access_key>@
+            - AWS_DEFAULT_REGION=<region-name>
+        volumes:
+            - ./dags:/opt/airflow/dags
+            - ./logs:/opt/airflow/logs
+            - ./scripts:/opt/airflow/scripts
+        ports:
+            - "8080:8080"
