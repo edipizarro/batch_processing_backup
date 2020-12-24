@@ -1,6 +1,5 @@
 from airflow import DAG
 from emr_dag import get_emr_tasks
-from leftraru_dag import get_leftraru_tasks
 from airflow.utils.dates import days_ago
 
 default_args = {
@@ -19,5 +18,3 @@ dag = DAG(
 )
 
 emr_tasks = get_emr_tasks(dag)
-# leftraru_tasks = get_leftraru_tasks(dag)
-# emr_tasks[-1] >> leftraru_tasks[0]
