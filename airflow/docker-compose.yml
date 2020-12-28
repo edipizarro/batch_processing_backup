@@ -37,6 +37,10 @@ services:
             - partition_det_ndet_output_detections=
             - partition_det_ndet_output_non_detections=
             - partition_det_ndet_bootstrap_actions_script=
+            - partition_det_ndet_master_instance_type=m5.xlarge
+            - partition_det_ndet_master_instance_count=1
+            - partition_det_ndet_core_instance_type=m5.4xlarge
+            - partition_det_ndet_core_instance_count=1
         volumes:
             - ./dags:/opt/airflow/dags
             - ./logs:/opt/airflow/logs
