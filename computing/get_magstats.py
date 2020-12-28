@@ -56,9 +56,7 @@ def main(
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    rep = str(partition).zfill(5)
-    detection_file = file_format.replace("{}", rep)
-
+    detection_file = f"detections_corrected_{partition}.parquet"
     logging.info(f"Opening corrected detection file: {detection_file}")
     detections = pd.read_parquet(os.path.join(corrected_dir, detection_file))
 
@@ -78,8 +76,8 @@ def main(
     objstats.to_parquet(os.path.join(output_dir, f"object_{partition}.parquet"))
     del objstats
 
-    files = sorted(os.listdir(non_det_dir))
-    non_det_file = files[partition]
+    rep = str(partition).zfill(5)
+    non_det_file = file_format.replace("{}", rep)
     non_det = pd.read_parquet(
         os.path.join(non_det_dir, non_det_file),
         columns=["objectId", "jd", "isdiffpos", "fid", "diffmaglim"],
