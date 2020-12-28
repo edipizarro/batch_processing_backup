@@ -3,6 +3,15 @@ from airflow.providers.amazon.aws.operators.emr_create_job_flow import (
     EmrCreateJobFlowOperator,
 )
 from airflow.providers.amazon.aws.sensors.emr_job_flow import EmrJobFlowSensor
+from airflow.models import Variable
+
+AVRO_SOURCE_FILES = Variable.get("partition_det_ndet_source_avro")
+OUTPUT_DETECTIONS = Variable.get("partition_det_ndet_output_detections")
+OUTPUT_NON_DETECTIONS = Variable.get("partition_det_ndet_output_non_detections")
+BOOTSTRAP_ACTIONS_SCRIPT = Variable.get(
+    "partition_det_ndet_bootstrap_actions_script",
+    "s3://alerce-static/emr/bootstrap-actions/emr_install_software.sh",
+)
 
 SPARK_STEPS = [
     {
@@ -18,7 +27,7 @@ SPARK_STEPS = [
                 "spark.jars.packages=org.apache.spark:spark-avro_2.11:2.4.5",
                 "/tmp/batch_processing/main.py",
                 "partition-dets-ndets",
-                "s3a://ztf-avro/ztf_20180601_programid1/*.avro",
+                AVRO_SOURCE_FILES,
                 "detections",
                 "non_detections",
                 "/tmp/batch_processing/partition_avro/alert.avsc",
@@ -32,7 +41,7 @@ SPARK_STEPS = [
             "Jar": "command-runner.jar",
             "Args": [
                 "s3-dist-cp",
-                "--dest=s3://ztf-historic-data/airflowtest/detections/",
+                f"--dest={OUTPUT_DETECTIONS}",
                 "--src=hdfs:///user/hadoop/detections/",
             ],
         },
@@ -44,7 +53,7 @@ SPARK_STEPS = [
             "Jar": "command-runner.jar",
             "Args": [
                 "s3-dist-cp",
-                "--dest=s3://ztf-historic-data/airflowtest/non-detections/",
+                f"--dest={OUTPUT_NON_DETECTIONS}",
                 "--src=hdfs:///user/hadoop/non_detections/",
             ],
         },
