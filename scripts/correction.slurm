@@ -12,10 +12,10 @@
 ml Python/3.7.2
 source ~/venvs/env/bin/activate
 
-input='s3a://ztf-historic-data/atesto/detections/'
-format='part-{}-690cf7f6-96e3-4434-8cb3-7ebea4b2b091_{}.c000.snappy.parquet'
+input='s3://ztf-historic-data/airflowtest/detections/'
+format='part-{}-37ce8946-4e58-4ded-ac4d-543492b6e405_{}.c000.snappy.parquet'
 resources='/home/apps/astro/alercebroker/resources/'
-output='/home/apps/astro/alercebroker/historic_data'
+output='/home/apps/astro/alercebroker/historic_data/corrected/'
 sleep `expr ${SLURM_ARRAY_TASK_ID} "*" 2`
 
 export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
