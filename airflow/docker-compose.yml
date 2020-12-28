@@ -12,7 +12,7 @@ services:
         entrypoint: ./scripts/entrypoint_scheduler.sh
         depends_on:
             - postgres
-        env:
+        environment:
             - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://<user>:<password>@postgres/<db>
             - AIRFLOW__CORE__EXECUTOR=LocalExecutor
             - AIRFLOW_CONN_AWS_DEFAULT=aws://<aws_access_key>:<aws_secret_access_key>@
@@ -28,11 +28,15 @@ services:
         depends_on:
             - postgres
             - scheduler
-        env:
+        environment:
             - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://<user>:<password>@postgres/<db>
             - AIRFLOW__CORE__EXECUTOR=LocalExecutor
             - AIRFLOW_CONN_AWS_DEFAULT=aws://<aws_access_key>:<aws_secret_access_key>@
             - AWS_DEFAULT_REGION=<region-name>
+            - partition_det_ndet_source_avro=
+            - partition_det_ndet_output_detections=
+            - partition_det_ndet_output_non_detections=
+            - partition_det_ndet_bootstrap_actions_script=
         volumes:
             - ./dags:/opt/airflow/dags
             - ./logs:/opt/airflow/logs
