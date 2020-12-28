@@ -12,6 +12,16 @@ BOOTSTRAP_ACTIONS_SCRIPT = Variable.get(
     "partition_det_ndet_bootstrap_actions_script",
     "s3://alerce-static/emr/bootstrap-actions/emr_install_software.sh",
 )
+MASTER_INSTANCE_TYPE = Variable.get(
+    "partition_det_ndet_master_instance_type", "m5.xlarge"
+)
+MASTER_INSTANCE_COUNT = Variable.get("partition_det_ndet_master_instance_count", 1)
+CORE_INSTANCE_TYPE = Variable.get("partition_det_ndet_core_instance_type", "m5.4xlarge")
+CORE_INSTANCE_COUNT = Variable.get("partition_det_ndet_core_instance_count", 1)
+EC2_KEY_NAME = Variable.get("partition_det_ndet_ssh_key", "alerce")
+KEEP_JOB_FLOW_ALIVE = Variable.get("partition_det_ndet_keep_job_flow_alive", False)
+TERMINATION_PROTECTED = Variable.get("partition_det_ndet_termination_protected", False)
+CLUSTER_NAME = Variable.get("partition_det_ndet_cluster_name", "BatchProcessing")
 
 SPARK_STEPS = [
     {
@@ -61,7 +71,7 @@ SPARK_STEPS = [
 ]
 
 JOB_FLOW_OVERRIDES = {
-    "Name": "AirflowTest",
+    "Name": CLUSTER_NAME,
     "ReleaseLabel": "emr-5.29.0",
     "LogUri": "s3://alerce-airflow-logs/emr",
     "Instances": {
@@ -70,29 +80,27 @@ JOB_FLOW_OVERRIDES = {
                 "Name": "Master node",
                 "Market": "SPOT",
                 "InstanceRole": "MASTER",
-                "InstanceType": "m5.xlarge",
-                "InstanceCount": 1,
+                "InstanceType": MASTER_INSTANCE_TYPE,
+                "InstanceCount": CORE_INSTANCE_COUNT,
             },
             {
                 "Name": "Compute node",
                 "Market": "SPOT",
                 "InstanceRole": "CORE",
-                "InstanceType": "m5.xlarge",
-                "InstanceCount": 1,
+                "InstanceType": CORE_INSTANCE_TYPE,
+                "InstanceCount": CORE_INSTANCE_COUNT,
             },
         ],
-        "KeepJobFlowAliveWhenNoSteps": False,
-        "TerminationProtected": False,
-        "Ec2KeyName": "alerce",
+        "KeepJobFlowAliveWhenNoSteps": KEEP_JOB_FLOW_ALIVE,
+        "TerminationProtected": TERMINATION_PROTECTED,
+        "Ec2KeyName": EC2_KEY_NAME,
     },
     "Steps": SPARK_STEPS,
     "Applications": [{"Name": "Hadoop"}, {"Name": "Spark"}],
     "BootstrapActions": [
         {
             "Name": "Install software",
-            "ScriptBootstrapAction": {
-                "Path": "s3://alerce-static/emr/bootstrap-actions/emr_install_software.sh"
-            },
+            "ScriptBootstrapAction": {"Path": BOOTSTRAP_ACTIONS_SCRIPT},
         }
     ],
     "JobFlowRole": "EMR_EC2_DefaultRole",
