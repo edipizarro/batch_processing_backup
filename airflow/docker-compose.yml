@@ -17,6 +17,14 @@ services:
             - AIRFLOW__CORE__EXECUTOR=LocalExecutor
             - AIRFLOW_CONN_AWS_DEFAULT=aws://<aws_access_key>:<aws_secret_access_key>@
             - AWS_DEFAULT_REGION=<region-name>
+            - AIRFLOW_VAR_PARTITION_DET_NDET_SOURCE_AVRO=
+            - ARIFLOW_VAR_PARTITION_DET_NDET_OUTPUT_DETECTIONS=
+            - ARIFLOW_VAR_PARTITION_DET_NDET_OUTPUT_NON_DETECTIONS=
+            - AIRFLOW_VAR_PARTITION_DET_NDET_BOOTSTRAP_ACTIONS_SCRIPT=
+            - AIRFLOW_VAR_PARTITION_DET_NDET_MASTER_INSTANCE_TYPE=
+            - AIRFLOW_VAR_PARTITION_DET_NDET_MASTER_INSTANCE_COUNT=
+            - AIRFLOW_VAR_PARTITION_DET_NDET_CORE_INSTANCE_TYPE=
+            - AIRFLOW_VAR_PARTITION_DET_NDET_CORE_INSTANCE_COUNT=
         volumes:
             - ./dags:/opt/airflow/dags
             - ./logs:/opt/airflow/logs
@@ -33,14 +41,14 @@ services:
             - AIRFLOW__CORE__EXECUTOR=LocalExecutor
             - AIRFLOW_CONN_AWS_DEFAULT=aws://<aws_access_key>:<aws_secret_access_key>@
             - AWS_DEFAULT_REGION=<region-name>
-            - partition_det_ndet_source_avro=
-            - partition_det_ndet_output_detections=
-            - partition_det_ndet_output_non_detections=
-            - partition_det_ndet_bootstrap_actions_script=
-            - partition_det_ndet_master_instance_type=m5.xlarge
-            - partition_det_ndet_master_instance_count=1
-            - partition_det_ndet_core_instance_type=m5.4xlarge
-            - partition_det_ndet_core_instance_count=1
+            - AIRFLOW_VAR_PARTITION_DET_NDET_SOURCE_AVRO=
+            - ARIFLOW_VAR_PARTITION_DET_NDET_OUTPUT_DETECTIONS=
+            - ARIFLOW_VAR_PARTITION_DET_NDET_OUTPUT_NON_DETECTIONS=
+            - AIRFLOW_VAR_PARTITION_DET_NDET_BOOTSTRAP_ACTIONS_SCRIPT=
+            - AIRFLOW_VAR_PARTITION_DET_NDET_MASTER_INSTANCE_TYPE=
+            - AIRFLOW_VAR_PARTITION_DET_NDET_MASTER_INSTANCE_COUNT=
+            - AIRFLOW_VAR_PARTITION_DET_NDET_CORE_INSTANCE_TYPE=
+            - AIRFLOW_VAR_PARTITION_DET_NDET_CORE_INSTANCE_COUNT=
         volumes:
             - ./dags:/opt/airflow/dags
             - ./logs:/opt/airflow/logs

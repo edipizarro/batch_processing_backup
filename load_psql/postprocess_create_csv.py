@@ -1,7 +1,7 @@
 import click
 import time
 import logging
-from .table_columns import (
+from table_columns import (
     det_col,
     obj_col,
     non_col,

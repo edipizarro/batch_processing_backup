@@ -22,6 +22,7 @@ EC2_KEY_NAME = Variable.get("partition_det_ndet_ssh_key", "alerce")
 KEEP_JOB_FLOW_ALIVE = Variable.get("partition_det_ndet_keep_job_flow_alive", False)
 TERMINATION_PROTECTED = Variable.get("partition_det_ndet_termination_protected", False)
 CLUSTER_NAME = Variable.get("partition_det_ndet_cluster_name", "BatchProcessing")
+GROUP_MARKET = Variable.get("partition_det_ndet_instance_group_market", "SPOT")
 
 SPARK_STEPS = [
     {
@@ -81,11 +82,11 @@ JOB_FLOW_OVERRIDES = {
                 "Market": "SPOT",
                 "InstanceRole": "MASTER",
                 "InstanceType": MASTER_INSTANCE_TYPE,
-                "InstanceCount": int(CORE_INSTANCE_COUNT),
+                "InstanceCount": int(MASTER_INSTANCE_COUNT),
             },
             {
                 "Name": "Compute node",
-                "Market": "SPOT",
+                "Market": GROUP_MARKET,
                 "InstanceRole": "CORE",
                 "InstanceType": CORE_INSTANCE_TYPE,
                 "InstanceCount": int(CORE_INSTANCE_COUNT),
