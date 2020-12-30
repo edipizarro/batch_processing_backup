@@ -1,9 +1,15 @@
 import unittest
 from unittest import mock
-from load_psql.table_data.detection import DataFrame, DetectionTableData
-from load_psql.table_data.object import ObjectTableData
-from load_psql.table_data.non_detection import NonDetectionTableData
-from load_psql.table_data.ss import SSTableData
+from load_psql.table_data.detection import DataFrame
+from load_psql.table_data import (
+    DetectionTableData,
+    NonDetectionTableData,
+    ObjectTableData,
+    SSTableData,
+    DataQualityTableData,
+    MagstatsTableData,
+    PS1TableData,
+)
 
 
 class DetectionTableDataTest(unittest.TestCase):
@@ -114,6 +120,94 @@ class SSTableDataTest(unittest.TestCase):
         self.assertNotIn("candid", ss_col)
         self.assertIsNotNone(ssmin)
         self.assertIsNotNone(window)
+
+    def test_save(self):
+        output_dir = "test"
+        n_partitions = 1
+        max_records_per_file = 1
+        mode = "mode"
+        selected = mock.MagicMock()
+        self.table_data.save(
+            output_dir, n_partitions, max_records_per_file, mode, selected
+        )
+        selected.coalesce.return_value.write.option.return_value.mode.return_value.csv.assert_called()
+
+
+class DataQualityTableDataTest(unittest.TestCase):
+    def setUp(self):
+        mock_session = mock.MagicMock()
+        self.table_data = DataQualityTableData(
+            spark_session=mock_session, source="source", read_args={}
+        )
+
+    @mock.patch("load_psql.table_data.data_quality.col")
+    def test_select(self, col):
+        from load_psql.table_data.table_columns import qua_col
+
+        tt_det = mock.MagicMock()
+        resp = self.table_data.select(tt_det)
+        self.assertNotIn("objectId", qua_col)
+        self.assertNotIn("candid", qua_col)
+        self.assertEqual(resp, tt_det.select.return_value)
+
+    def test_save(self):
+        output_dir = "test"
+        n_partitions = 1
+        max_records_per_file = 1
+        mode = "mode"
+        selected = mock.MagicMock()
+        self.table_data.save(
+            output_dir, n_partitions, max_records_per_file, mode, selected
+        )
+        selected.coalesce.return_value.write.option.return_value.mode.return_value.csv.assert_called()
+
+
+class MagstatsTableDataTest(unittest.TestCase):
+    def setUp(self):
+        mock_session = mock.MagicMock()
+        self.table_data = MagstatsTableData(
+            spark_session=mock_session, source="source", read_args={}
+        )
+
+    @mock.patch("load_psql.table_data.magstats.col")
+    @mock.patch("load_psql.table_data.magstats.lit")
+    def test_select(self, lit, col):
+        resp = self.table_data.select()
+        self.assertEqual(
+            resp,
+            self.table_data.dataframe.withColumn.return_value.withColumn.return_value.select.return_value,
+        )
+
+    def test_save(self):
+        output_dir = "test"
+        n_partitions = 1
+        max_records_per_file = 1
+        mode = "mode"
+        selected = mock.MagicMock()
+        self.table_data.save(
+            output_dir, n_partitions, max_records_per_file, mode, selected
+        )
+        selected.coalesce.return_value.write.option.return_value.mode.return_value.csv.assert_called()
+
+
+class PS1TableDataTest(unittest.TestCase):
+    def setUp(self):
+        mock_session = mock.MagicMock()
+        self.table_data = PS1TableData(
+            spark_session=mock_session, source="source", read_args={}
+        )
+
+    @mock.patch("load_psql.table_data.ps1.col")
+    @mock.patch("load_psql.table_data.ps1.countDistinct")
+    @mock.patch("load_psql.table_data.ps1.PS1TableData.apply_fun")
+    def test_select(self, fun, lit, col):
+        from load_psql.table_data.table_columns import ps1_col
+
+        resp = self.table_data.select(mock.MagicMock())
+        self.assertNotIn("objectId", ps1_col)
+        self.assertNotIn("unique1", ps1_col)
+        self.assertNotIn("unique2", ps1_col)
+        self.assertNotIn("unique3", ps1_col)
 
     def test_save(self):
         output_dir = "test"
