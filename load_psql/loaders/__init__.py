@@ -4,4 +4,7 @@ from .loaders import (
     ObjectsCSVLoader,
     NonDetectionsCSVLoader,
     SSCSVLoader,
+    DataQualityCSVLoader,
+    MagstatsCSVLoader,
+    PS1CSVLoader,
 )
