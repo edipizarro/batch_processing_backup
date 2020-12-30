@@ -7,6 +7,8 @@ from load_psql.loaders import (
     DataQualityCSVLoader,
     MagstatsCSVLoader,
     PS1CSVLoader,
+    GaiaCSVLoader,
+    ReferenceCSVLoader,
 )
 from load_psql.table_data import (
     DetectionTableData,
@@ -16,6 +18,8 @@ from load_psql.table_data import (
     DataQualityTableData,
     MagstatsTableData,
     PS1TableData,
+    GaiaTableData,
+    ReferenceTableData,
 )
 import unittest
 from unittest import mock
@@ -171,6 +175,56 @@ class PS1CSVLoaderTest(unittest.TestCase):
             max_records_per_file=1,
             mode="mode",
             tt_det=mock.MagicMock(),
+        )
+        select.assert_called_once()
+        save.assert_called_once()
+
+
+class GaiaCSVLoaderTest(unittest.TestCase):
+    def test_create_table_data(self):
+        loader = GaiaCSVLoader(source="source", read_args={"ok": "ok"})
+        self.assertEqual(loader.source, "source")
+        self.assertEqual(loader.read_args["ok"], "ok")
+        table_data = loader.create_table_data(
+            spark_session=mock.MagicMock(), source="source", read_args={}
+        )
+        self.assertIsInstance(table_data, GaiaTableData)
+
+    @mock.patch.object(GaiaTableData, "select")
+    @mock.patch.object(GaiaTableData, "save")
+    def test_save_csv(self, save, select):
+        loader = GaiaCSVLoader(source="source", read_args={"ok": "ok"})
+        loader.save_csv(
+            spark_session=mock.Mock(),
+            output_path="test",
+            n_partitions=1,
+            max_records_per_file=1,
+            mode="mode",
+        )
+        select.assert_called_once()
+        save.assert_called_once()
+
+
+class ReferenceCSVLoaderTest(unittest.TestCase):
+    def test_create_table_data(self):
+        loader = ReferenceCSVLoader(source="source", read_args={"ok": "ok"})
+        self.assertEqual(loader.source, "source")
+        self.assertEqual(loader.read_args["ok"], "ok")
+        table_data = loader.create_table_data(
+            spark_session=mock.MagicMock(), source="source", read_args={}
+        )
+        self.assertIsInstance(table_data, ReferenceTableData)
+
+    @mock.patch.object(ReferenceTableData, "select")
+    @mock.patch.object(ReferenceTableData, "save")
+    def test_save_csv(self, save, select):
+        loader = ReferenceCSVLoader(source="source", read_args={"ok": "ok"})
+        loader.save_csv(
+            spark_session=mock.Mock(),
+            output_path="test",
+            n_partitions=1,
+            max_records_per_file=1,
+            mode="mode",
         )
         select.assert_called_once()
         save.assert_called_once()
