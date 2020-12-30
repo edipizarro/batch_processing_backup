@@ -24,24 +24,29 @@ def get_loader_config(table, config, default_config):
         return default_config
 
 
+def get_tt_det():
+    pass
+
+
 def create_csv(sources, outputs, config=None):
     spark = create_session()
     default_args = {}
     default_config = {}  # add default config
     config = config or {}
-    tt_det = None
+    tt_det = get_tt_det()
     if "detections" in sources and "detections" in outputs:
         detections_loader = DetectionsCSVLoader(
             sources["detections"], read_args=default_args
         )
         loader_config = get_loader_config("detections", config, default_config)
         step_id = "bulk_1.0.0"
-        tt_det = detections_loader.save_csv(
+        detections_loader.save_csv(
             spark_session=spark,
             output_path=outputs["detections"],
             n_partitions=loader_config["n_partitions"],
             max_records_per_file=loader_config["max_records_per_file"],
             mode=loader_config["mode"],
+            tt_det=tt_det,
             step_id=step_id,
         )
         detections_loader.psql_load_csv()
