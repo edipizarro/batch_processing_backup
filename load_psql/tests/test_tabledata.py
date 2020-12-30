@@ -9,6 +9,8 @@ from load_psql.table_data import (
     DataQualityTableData,
     MagstatsTableData,
     PS1TableData,
+    GaiaTableData,
+    ReferenceTableData,
 )
 
 
@@ -208,6 +210,66 @@ class PS1TableDataTest(unittest.TestCase):
         self.assertNotIn("unique1", ps1_col)
         self.assertNotIn("unique2", ps1_col)
         self.assertNotIn("unique3", ps1_col)
+
+    def test_save(self):
+        output_dir = "test"
+        n_partitions = 1
+        max_records_per_file = 1
+        mode = "mode"
+        selected = mock.MagicMock()
+        self.table_data.save(
+            output_dir, n_partitions, max_records_per_file, mode, selected
+        )
+        selected.coalesce.return_value.write.option.return_value.mode.return_value.csv.assert_called()
+
+
+class GaiaTableDataTest(unittest.TestCase):
+    def setUp(self):
+        mock_session = mock.MagicMock()
+        self.table_data = GaiaTableData(
+            spark_session=mock_session, source="source", read_args={}
+        )
+
+    @mock.patch("load_psql.table_data.gaia.col")
+    @mock.patch("load_psql.table_data.gaia.countDistinct")
+    @mock.patch("load_psql.table_data.gaia.GaiaTableData.apply_fun")
+    @mock.patch("load_psql.table_data.gaia.GaiaTableData.compare_threshold")
+    def test_select(self, comp_threshold, fun, count, col):
+        from load_psql.table_data.table_columns import gaia_col
+
+        resp = self.table_data.select(mock.MagicMock(), mock.MagicMock())
+        self.assertNotIn("objectId", gaia_col)
+        self.assertNotIn("candid", gaia_col)
+        self.assertNotIn("unique1", gaia_col)
+
+    def test_save(self):
+        output_dir = "test"
+        n_partitions = 1
+        max_records_per_file = 1
+        mode = "mode"
+        selected = mock.MagicMock()
+        self.table_data.save(
+            output_dir, n_partitions, max_records_per_file, mode, selected
+        )
+        selected.coalesce.return_value.write.option.return_value.mode.return_value.csv.assert_called()
+
+
+class ReferenceTableDataTest(unittest.TestCase):
+    def setUp(self):
+        mock_session = mock.MagicMock()
+        self.table_data = ReferenceTableData(
+            spark_session=mock_session, source="source", read_args={}
+        )
+
+    @mock.patch("load_psql.table_data.reference.col")
+    @mock.patch("load_psql.table_data.reference.Window")
+    @mock.patch("load_psql.table_data.reference.ReferenceTableData.apply_fun")
+    def test_select(self, fun, window, col):
+        from load_psql.table_data.table_columns import ref_col
+
+        resp = self.table_data.select(mock.MagicMock(), mock.MagicMock())
+        self.assertNotIn("objectId", ref_col)
+        self.assertNotIn("rfid", ref_col)
 
     def test_save(self):
         output_dir = "test"

@@ -7,4 +7,6 @@ from .loaders import (
     DataQualityCSVLoader,
     MagstatsCSVLoader,
     PS1CSVLoader,
+    GaiaCSVLoader,
+    ReferenceCSVLoader,
 )

@@ -6,3 +6,5 @@ from .ss import SSTableData
 from .data_quality import DataQualityTableData
 from .magstats import MagstatsTableData
 from .ps1 import PS1TableData
+from .gaia import GaiaTableData
+from .reference import ReferenceTableData
