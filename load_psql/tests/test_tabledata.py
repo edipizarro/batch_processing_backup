@@ -23,7 +23,7 @@ class DetectionTableDataTest(unittest.TestCase):
             fillna_mock
         )
         step_id = "step_id"
-        resp = table_data.select(tt_det, step_id)
+        resp = self.table_data.select(tt_det, step_id)
         self.assertEqual(resp, "ok")
 
     def test_save(self):

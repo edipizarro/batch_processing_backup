@@ -20,13 +20,7 @@ from pyspark.sql.types import IntegerType
 
 
 class DetectionTableData(TableData):
-    def get_tt_det(self) -> DataFrame:
-        return self.dataframe.alias("i").join(
-            self.dataframe.alias("c"), ["objectId", "candid"], "inner"
-        )
-
-    def select(self, step_id: str) -> DataFrame:
-        tt_det = self.get_tt_det()
+    def select(self, tt_det: DataFrame, step_id: str) -> DataFrame:
         data_det = (
             tt_det.select(
                 "i.aimage",
@@ -130,7 +124,7 @@ class DetectionTableData(TableData):
         data_det = data_det.fillna("", "drbversion")
 
         sel_det = data_det.select(*[col(c) for c in det_col])
-        return sel_det, tt_det
+        return sel_det
 
     def save(self, output_dir, n_partitions, max_records_per_file, mode, selected=None):
         # logging.info("Writing detections")
