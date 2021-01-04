@@ -112,9 +112,9 @@ class DetectionTableData(TableData):
                 "i.tooflag",
                 "i.xpos",
                 "i.ypos",
-                "rbversion",
-                "drb",
-                "drbversion",
+                "i.rbversion",
+                "i.drb",
+                "i.drbversion",
             )
             .withColumn("has_stamp", col("parent_candid") == 0)
             .withColumn("step_id_corr", lit(step_id))

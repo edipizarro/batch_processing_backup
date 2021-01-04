@@ -7,7 +7,10 @@ class TableData(ABC):
     def __init__(
         self, spark_session: SparkSession, source: str, read_args: dict
     ) -> TableData:
-        self.dataframe = spark_session.read.load(source, **read_args)
+        if len(source):
+            self.dataframe = spark_session.read.load(source, **read_args)
+        else:
+            self.dataframe = None
 
     @abstractmethod
     def select(self) -> DataFrame:
