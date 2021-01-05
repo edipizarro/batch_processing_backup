@@ -2,7 +2,7 @@
 #SBATCH -J correction
 #SBATCH -p slims
 #SBATCH -n 1
-#SBATCH --array=13,54,69,81,95,100,101,133,221,246,247,260,261,273,281
+#SBATCH --array=$3
 #SBATCH --output=/home/apps/astro/alercebroker/logs/correction_%A_%a.txt
 #SBATCH --error=/home/apps/astro/alercebroker/logs/correction_%A_%a.err
 #SBATCH --mail-user=javier.arredondo.c@usach.cl
@@ -11,10 +11,10 @@
 ml Python/3.7.2
 source ~/venvs/env/bin/activate
 
-input='s3a://ztf-historic-data/20201228/detections/'
-format='part-{}-d27a5ff4-b27d-4ccf-9ccc-d7838431dc4b_{}.c000.snappy.parquet'
+input= $1
+format=$2
 resources='/home/apps/astro/alercebroker/resources/'
-output='/home/apps/astro/alercebroker/historic_data/corrected/'
+output='/home/apps/astro/alercebroker/historic_data/'
 
 export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
 export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
