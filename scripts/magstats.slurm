@@ -2,7 +2,6 @@
 #SBATCH -J magstats
 #SBATCH -p slims
 #SBATCH -n 1
-#SBATCH --array=$4
 #SBATCH --output=/home/apps/astro/alercebroker/logs/magstats_%A_%a.txt
 #SBATCH --error=/home/apps/astro/alercebroker/logs/magstats_%A_%a.err
 #SBATCH --mail-user=javier.arredondo.c@usach.cl
