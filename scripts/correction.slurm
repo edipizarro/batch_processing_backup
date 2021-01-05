@@ -2,7 +2,6 @@
 #SBATCH -J correction
 #SBATCH -p slims
 #SBATCH -n 1
-#SBATCH --array=$3
 #SBATCH --output=/home/apps/astro/alercebroker/logs/correction_%A_%a.txt
 #SBATCH --error=/home/apps/astro/alercebroker/logs/correction_%A_%a.err
 #SBATCH --mail-user=javier.arredondo.c@usach.cl
@@ -11,7 +10,7 @@
 ml Python/3.7.2
 source ~/venvs/env/bin/activate
 
-input= $1
+input=$1
 format=$2
 resources='/home/apps/astro/alercebroker/resources/'
 output='/home/apps/astro/alercebroker/historic_data/'
@@ -22,4 +21,4 @@ export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
 echo "${SLURM_ARRAY_TASK_ID} ${SLURM_JOB_NODELIST}"
 ## sleep `expr ${SLURM_ARRAY_TASK_ID} "*" 2`
 
-python3 ../computing/get_correction.py $input $output ${SLURM_ARRAY_TASK_ID} ${SLURM_JOB_NODELIST} ${SLURM_ARRAY_JOB_ID} $resources --file-format $format
+python3 ../computing/get_correction.py ${input} ${output} ${SLURM_ARRAY_TASK_ID} ${SLURM_JOB_NODELIST} ${SLURM_ARRAY_JOB_ID} $resources --file-format $format
