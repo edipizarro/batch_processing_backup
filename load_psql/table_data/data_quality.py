@@ -18,4 +18,4 @@ class DataQualityTableData(TableData):
         tt_qua = selected or self.dataframe
         tt_qua.coalesce(n_partitions).write.option(
             "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir + "dataquality", emptyValue="")
+        ).mode(mode).csv(output_dir, emptyValue="")

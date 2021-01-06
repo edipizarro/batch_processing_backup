@@ -22,6 +22,7 @@ def create_session():
     # logging.info("Creating spark session")
     conf = SparkConf()
     conf.set("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.2")
+    conf.set("fs.s3.impl", "org.apache.hadoop.fs.s3native.NativeS3FileSystem")
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
     spark.sparkContext.setLogLevel("WARN")
     return spark
@@ -39,9 +40,12 @@ def validate_config(config):
         "non_detection",
         "object",
         "magstats",
-        "ps1",
-        "ss",
+        "ps1_ztf",
+        "gaia_ztf",
+        "ss_ztf",
         "reference",
+
+
         "dataquality",
         "xmatch",
         "probability",
@@ -73,7 +77,7 @@ def validate_config(config):
     return True, None
 
 
-def create_and_upload_csv(Loader, table_name, config, session, default_args, **kwargs):
+def loader_save_and_upload(Loader, table_name, config, session, default_args, **kwargs):
     loader = Loader(source=config["sources"][table_name], read_args=default_args)
     loader.save_csv(
         spark_session=session,
@@ -83,7 +87,21 @@ def create_and_upload_csv(Loader, table_name, config, session, default_args, **k
         mode=config["csv_loader_config"]["mode"],
         **kwargs,
     )
-    loader.psql_load_csv(config["outputs"][table_name], config["db"])
+    loader.psql_load_csv(config["outputs"][table_name], config["db"], table_name)
+
+def loader_create_csv(Loader, table_name, config, session, default_args, **kwargs):
+    loader = Loader(source=config["sources"][table_name], read_args=default_args)
+    loader.save_csv(
+        spark_session=session,
+        output_path=config["outputs"][table_name],
+        n_partitions=config["csv_loader_config"]["n_partitions"],
+        max_records_per_file=config["csv_loader_config"]["max_records_per_file"],
+        mode=config["csv_loader_config"]["mode"],
+        **kwargs,
+    )
+
+def loader_load_csv(Loader, table_name, config, session, default_args, **kwargs):
+    Loader.psql_load_csv(config["outputs"][table_name], config["db"], table_name)
 
 
 @click.command()
@@ -112,7 +130,7 @@ def process_csv(config_file, loglevel):
     step_id = "bulk_1.0.0"
     obj_cid_window = Window.partitionBy("objectId").orderBy("candid")
     if config["tables"]["detection"]:
-        create_and_upload_csv(
+        loader_save_and_upload(
             DetectionsCSVLoader,
             "detection",
             config,
@@ -122,7 +140,7 @@ def process_csv(config_file, loglevel):
             step_id=step_id,
         )
     if config["tables"]["object"]:
-        create_and_upload_csv(
+        loader_save_and_upload(
             ObjectsCSVLoader,
             "object",
             config,
@@ -130,7 +148,7 @@ def process_csv(config_file, loglevel):
             default_args,
         )
     if config["tables"]["non_detection"]:
-        create_and_upload_csv(
+        loader_save_and_upload(
             NonDetectionsCSVLoader,
             "non_detection",
             config,
@@ -138,9 +156,9 @@ def process_csv(config_file, loglevel):
             default_args,
         )
     if config["tables"]["ss"]:
-        create_and_upload_csv(
+        loader_save_and_upload(
             SSCSVLoader,
-            "ss",
+            "ss_ztf",
             config,
             spark,
             default_args,
@@ -149,7 +167,7 @@ def process_csv(config_file, loglevel):
         )
 
     if config["tables"]["magstats"]:
-        create_and_upload_csv(
+        loader_save_and_upload(
             MagstatsCSVLoader,
             "magstats",
             config,
@@ -157,9 +175,19 @@ def process_csv(config_file, loglevel):
             default_args,
         )
     if config["tables"]["ps1"]:
-        create_and_upload_csv(
+        loader_save_and_upload(
             PS1CSVLoader,
-            "ps1",
+            "ps1_ztf",
+            config,
+            spark,
+            default_args,
+            obj_cid_window=obj_cid_window,
+            fun=min,
+        )
+    if config["tables"]["ps1"]:
+        loader_save_and_upload(
+            PS1CSVLoader,
+            "gaia_ztf",
             config,
             spark,
             default_args,
@@ -167,7 +195,7 @@ def process_csv(config_file, loglevel):
             fun=min,
         )
     if config["tables"]["reference"]:
-        create_and_upload_csv(
+        loader_save_and_upload(
             ReferenceCSVLoader,
             "reference",
             config,
@@ -178,7 +206,243 @@ def process_csv(config_file, loglevel):
         )
 
     if config["tables"]["dataquality"]:
-        create_and_upload_csv(
+        loader_save_and_upload(
+            DataQualityCSVLoader,
+            "dataquality",
+            config,
+            spark,
+            default_args,
+            tt_det=tt_det,
+        )
+    if config["tables"]["xmatch"]:
+        pass
+    if config["tables"]["probability"]:
+        pass
+    if config["tables"]["feature"]:
+        pass
+
+@click.command()
+@click.argument("config_file")
+@click.option(
+    "--log",
+    "loglevel",
+    default="INFO",
+    help="log level to use",
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
+)
+def create_csv(config_file, loglevel):
+    if not os.path.exists(config_file):
+        raise Exception("Config file not found")
+    sys.path.append(os.path.dirname(os.path.expanduser(config_file)))
+    from config import load_config as config
+
+    valid, message = validate_config(config)
+    if not valid:
+        raise Exception(message)
+    spark = create_session()
+    default_args = {}
+    tt_det = get_tt_det(
+        spark, config["sources"]["detection"], config["sources"]["raw_detection"]
+    )
+    step_id = "bulk_1.0.0"
+    obj_cid_window = Window.partitionBy("objectId").orderBy("candid")
+    if config["tables"]["detection"]:
+        loader_create_csv(
+            DetectionsCSVLoader,
+            "detection",
+            config,
+            spark,
+            default_args,
+            tt_det=tt_det,
+            step_id=step_id,
+        )
+    if config["tables"]["object"]:
+        loader_create_csv(
+            ObjectsCSVLoader,
+            "object",
+            config,
+            spark,
+            default_args,
+        )
+    if config["tables"]["non_detection"]:
+        loader_create_csv(
+            NonDetectionsCSVLoader,
+            "non_detection",
+            config,
+            spark,
+            default_args,
+        )
+    if config["tables"]["ss"]:
+        loader_create_csv(
+            SSCSVLoader,
+            "ss_ztf",
+            config,
+            spark,
+            default_args,
+            tt_det=tt_det,
+            obj_cid_window=obj_cid_window,
+        )
+
+    if config["tables"]["magstats"]:
+        loader_create_csv(
+            MagstatsCSVLoader,
+            "magstats",
+            config,
+            spark,
+            default_args,
+        )
+    if config["tables"]["ps1"]:
+        loader_create_csv(
+            PS1CSVLoader,
+            "ps1_ztf",
+            config,
+            spark,
+            default_args,
+            obj_cid_window=obj_cid_window,
+            fun=min,
+        )
+    if config["tables"]["ps1"]:
+        loader_create_csv(
+            PS1CSVLoader,
+            "gaia_ztf",
+            config,
+            spark,
+            default_args,
+            obj_cid_window=obj_cid_window,
+            fun=min,
+        )
+    if config["tables"]["reference"]:
+        loader_create_csv(
+            ReferenceCSVLoader,
+            "reference",
+            config,
+            spark,
+            default_args,
+            tt_det=tt_det,
+            fun=min,
+        )
+
+    if config["tables"]["dataquality"]:
+        loader_create_csv(
+            DataQualityCSVLoader,
+            "dataquality",
+            config,
+            spark,
+            default_args,
+            tt_det=tt_det,
+        )
+    if config["tables"]["xmatch"]:
+        pass
+    if config["tables"]["probability"]:
+        pass
+    if config["tables"]["feature"]:
+        pass
+
+
+
+@click.command()
+@click.argument("config_file")
+@click.option(
+    "--log",
+    "loglevel",
+    default="INFO",
+    help="log level to use",
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
+)
+def psql_copy_csv(config_file, loglevel):
+    if not os.path.exists(config_file):
+        raise Exception("Config file not found")
+    sys.path.append(os.path.dirname(os.path.expanduser(config_file)))
+    from config import load_config as config
+
+    valid, message = validate_config(config)
+    if not valid:
+        raise Exception(message)
+    spark = create_session()
+    default_args = {}
+    tt_det = get_tt_det(
+        spark, config["sources"]["detection"], config["sources"]["raw_detection"]
+    )
+    step_id = "bulk_1.0.0"
+    obj_cid_window = Window.partitionBy("objectId").orderBy("candid")
+    if config["tables"]["detection"]:
+        loader_load_csv(
+            DetectionsCSVLoader,
+            "detection",
+            config,
+            spark,
+            default_args,
+            tt_det=tt_det,
+            step_id=step_id,
+        )
+    if config["tables"]["object"]:
+        loader_load_csv(
+            ObjectsCSVLoader,
+            "object",
+            config,
+            spark,
+            default_args,
+        )
+    if config["tables"]["non_detection"]:
+        loader_load_csv(
+            NonDetectionsCSVLoader,
+            "non_detection",
+            config,
+            spark,
+            default_args,
+        )
+    if config["tables"]["ss"]:
+        loader_load_csv(
+            SSCSVLoader,
+            "ss_ztf",
+            config,
+            spark,
+            default_args,
+            tt_det=tt_det,
+            obj_cid_window=obj_cid_window,
+        )
+
+    if config["tables"]["magstats"]:
+        loader_load_csv(
+            MagstatsCSVLoader,
+            "magstats",
+            config,
+            spark,
+            default_args,
+        )
+    if config["tables"]["ps1"]:
+        loader_load_csv(
+            PS1CSVLoader,
+            "ps1_ztf",
+            config,
+            spark,
+            default_args,
+            obj_cid_window=obj_cid_window,
+            fun=min,
+        )
+    if config["tables"]["ps1"]:
+        loader_load_csv(
+            PS1CSVLoader,
+            "gaia_ztf",
+            config,
+            spark,
+            default_args,
+            obj_cid_window=obj_cid_window,
+            fun=min,
+        )
+    if config["tables"]["reference"]:
+        loader_load_csv(
+            ReferenceCSVLoader,
+            "reference",
+            config,
+            spark,
+            default_args,
+            tt_det=tt_det,
+            fun=min,
+        )
+
+    if config["tables"]["dataquality"]:
+        loader_load_csv(
             DataQualityCSVLoader,
             "dataquality",
             config,

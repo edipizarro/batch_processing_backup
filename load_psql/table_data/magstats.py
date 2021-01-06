@@ -17,4 +17,4 @@ class MagstatsTableData(TableData):
         sel_mag = selected or self.dataframe
         sel_mag.coalesce(n_partitions).write.option(
             "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir + "magstats", emptyValue="")
+        ).mode(mode).csv(output_dir, emptyValue="")

@@ -14,4 +14,4 @@ class NonDetectionTableData(TableData):
         sel_non = selected or self.dataframe
         sel_non.coalesce(n_partitions).write.option(
             "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir + "non_detection", emptyValue="")
+        ).mode(mode).csv(output_dir, emptyValue="")

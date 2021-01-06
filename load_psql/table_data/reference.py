@@ -30,4 +30,4 @@ class ReferenceTableData(TableData):
         sel_ref = selected or self.dataframe
         sel_ref.coalesce(n_partitions).write.option(
             "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir + "reference", emptyValue="")
+        ).mode(mode).csv(output_dir, emptyValue="")

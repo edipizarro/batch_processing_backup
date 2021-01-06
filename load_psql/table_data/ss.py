@@ -27,4 +27,4 @@ class SSTableData(TableData):
         tt_ss_min = selected or self.dataframe
         tt_ss_min.coalesce(n_partitions).write.option(
             "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir + "ss_ztf", emptyValue="")
+        ).mode(mode).csv(output_dir, emptyValue="")
