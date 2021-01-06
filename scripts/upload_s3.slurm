@@ -2,7 +2,6 @@
 #SBATCH -J to_s3
 #SBATCH -p slims
 #SBATCH -n 1
-#SBATCH --array=$4
 #SBATCH --output=/home/apps/astro/alercebroker/logs/to_s3_%A_%a.txt
 #SBATCH --error=/home/apps/astro/alercebroker/logs/to_s3_%A_%a.err
 #SBATCH --mail-user=javier.arredondo.c@usach.cl
