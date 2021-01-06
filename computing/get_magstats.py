@@ -91,7 +91,7 @@ def main(
 
     logging.info("Joining magstats and dm/dt")
     magstats = magstats.join(dd, on=["objectId", "fid"])
-
+    logging.info("Writing magstats")
     magstats.to_parquet(os.path.join(output_dir, f"magstats_{partition}.parquet"))
 
 

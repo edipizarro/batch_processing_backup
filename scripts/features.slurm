@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #SBATCH -J features
 #SBATCH -p slims
 #SBATCH -n 1
@@ -5,7 +7,6 @@
 #SBATCH --error=/home/apps/astro/alercebroker/logs/features_%A_%a.err
 #SBATCH --mail-user=javier.arredondo.c@usach.cl
 #SBATCH --mem-per-cpu=17828
-
 
 ml Python/3.7.2
 source ~/venvs/env/bin/activate
