@@ -44,7 +44,7 @@ class DetectionTableData(TableData):
                 "i.fid",
                 "i.field",
                 "i.fwhm",
-                self.dataframe.isdiffpos.cast(IntegerType()),
+                tt_det["i.isdiffpos"].cast(IntegerType()),
                 "i.jdendhist",
                 "i.jdendref",
                 "i.jdstarthist",
@@ -126,9 +126,9 @@ class DetectionTableData(TableData):
         sel_det = data_det.select(*[col(c) for c in det_col])
         return sel_det
 
-    def save(self, output_dir, n_partitions, max_records_per_file, mode, selected=None):
+    def save(self, output_dir, n_partitions, max_records_per_file, mode, selected=None, *args, **kwargs):
         # logging.info("Writing detections")
         sel_det = selected or self.dataframe
         sel_det.coalesce(n_partitions).write.option(
             "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir + "detection", emptyValue="")
+        ).mode(mode).csv(output_dir, emptyValue="")

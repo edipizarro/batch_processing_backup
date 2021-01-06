@@ -17,6 +17,16 @@ import psycopg2
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
+def execute_copy(file, config, table_name):
+                # logging.info(f"Copying {file}")
+                con = psycopg2.connect(**config)
+                fileName = open(file)
+                cursor = con.cursor()
+                cursor.copy_from(fileName, table_name, sep=",", null="")
+                con.commit()
+                con.close()
+                fileName.close()
+
 
 class CSVLoader(ABC):
     def __init__(self, source: str, read_args: dict):
@@ -49,29 +59,12 @@ class CSVLoader(ABC):
             **kwargs,
         )
 
-    def execute_copy(self, file: str, con):
-        # logging.info(f"Copying {file}")
-        fileName = open(file)
-        tablename = Path(fileName).stem
-        cursor = con.cursor()
-        cursor.copy_from(fileName, tablename, sep=",", null="")
-        con.commit()
-        con.close()
-        fileName.close()
-
-    def psql_load_csv(self, csv_path: str, config: dict) -> None:
+    
+    @classmethod
+    def psql_load_csv(cls, csv_path: str, config: dict, table_name: str) -> None:
         names = glob.glob(csv_path + "/*")
-        # logging.info("Connecting to database")
-        con = psycopg2.connect(
-            config["database"],
-            config["user"],
-            config["password"],
-            config["host"],
-            config["port"],
-        )
-        # logging.info(f"Starting pool of {cpu_count()} processes")
         with Pool(cpu_count()) as p:
-            p.map(self.execute_copy, [[names, con]])
+            p.starmap(execute_copy, [(file, config, table_name) for file in names])
 
 
 class DetectionsCSVLoader(CSVLoader):

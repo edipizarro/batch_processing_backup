@@ -1,49 +1,70 @@
-db = {}
+import os
+
+## CONFIGURE DATABASE CONNECTION CREDENTIALS
+## VALID KEYS ARE PSYCOPG2 CONNECTION ARGUMENTS
+db = {
+    "dbname": os.getenv("DBNAME"),
+    "user": os.getenv("USER"),
+    "password": os.getenv("PASSWORD"),
+    "host": os.getenv("HOST"),
+    "port": int(os.getenv("PORT")),
+}
+## CONFIGURE TABLES THAT WILL BE PROCESSED
+## SET TRUE OR FALSE
 tables = {
     "detection": True,
-    "non_detection": True,
-    "object": True,
-    "magstats": True,
-    "ps1": True,
-    "ss": True,
-    "reference": True,
-    "dataquality": True,
+    "non_detection": False,
+    "object": False,
+    "magstats": False,
+    "ps1_ztf": False,
+    "ss_ztf": False,
+    "reference": False,
+    "dataquality": False,
     "xmatch": False,
     "probability": False,
     "feature": False,
+    "gaia_ztf": False,
 }
+## SET SOURCE LOCATION OF PARQUET FILES
+## FOR S3 THE s3a URI CAN BE USED
 sources = {
-    "raw_detection": "s3a://ztf-historic-data/20201228/detections/part-00000-d27a5ff4-b27d-4ccf-9ccc-d7838431dc4b_00000.c000.snappy.parquet",
-    "detection": "s3a://ztf-historic-data/20201228/corrected_detections/detections_corrected_0.parquet",
-    "non_detection": "s3a://ztf-historic-data/20201228/non_detections/part-00000-54615e63-9fa3-49ea-8077-c900ef281e26_00000.c000.snappy.parquet",
-    "object": "s3a://ztf-historic-data/20201228/objects/object_0.parquet",
-    "magstats": "s3a://ztf-historic-data/20201228/magstats/magstats_0.parquet",
-    "ps1": "s3a://ztf-historic-data/20201228/corrected_detections/detections_corrected_0.parquet",
-    "ss": "",  # can be empty
+    "raw_detection": "",
+    "detection": "",
+    "non_detection": "",
+    "object": "",
+    "magstats": "",
+    "ps1_ztf": "",
+    "ss_ztf": "",  # can be empty
     "reference": "",  # can be empty
     "dataquality": "",  # can be empty
+    "gaia_ztf": "",  # can be empty
     "xmatch": "",
     "probability": "",
     "feature": "",
 }
+## SET OUTPUT LOCATION FOR CSV FILES
+## LOCAL DIRECTORY OR s3 URI CAN BE USED
 outputs = {
-    "detection": "s3a://ztf-historic-data/atest/detections",
-    "non_detection": "s3a://ztf-historic-data/atest/non_detections",
-    "object": "s3a://ztf-historic-data/atest/objects",
-    "magstats": "s3a://ztf-historic-data/atest/magstats",
-    "ps1": "s3a://ztf-historic-data/atest/ps1",
-    "ss": "s3a://ztf-historic-data/atest/ss",
-    "reference": "s3a://ztf-historic-data/atest/reference",
-    "dataquality": "s3a://ztf-historic-data/atest/dataquality",
-    "xmatch": "s3a://ztf-historic-data/atest/xmatch",
-    "probability": "s3a://ztf-historic-data/atest/prob",
-    "feature": "s3a://ztf-historic-data/atest/feature",
+    "detection": "",
+    "non_detection": "",
+    "object": "",
+    "magstats": "",
+    "ps1_ztf": "",
+    "ss_ztf": "",
+    "reference": "",
+    "dataquality": "",
+    "xmatch": "",
+    "probability": "",
+    "feature": "",
+    "gaia_ztf": "",
 }
+## ARGUMENTS FOR SAVING CSV FILES WITH SPARK WRITER
 csv_loader_config = {
     "n_partitions": 16,
     "max_records_per_file": 100000,
     "mode": "overwrite",
 }
+## THIS IS THE CONFIG THAT WILL BE READ BY THE MAIN APP
 load_config = {
     "db": db,
     "tables": tables,

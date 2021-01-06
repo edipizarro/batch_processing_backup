@@ -22,4 +22,4 @@ class ObjectTableData(TableData):
         sel_obj = selected or self.dataframe
         sel_obj.coalesce(n_partitions).write.option(
             "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir + "object", emptyValue="")
+        ).mode(mode).csv(output_dir, emptyValue="")
