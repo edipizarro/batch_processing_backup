@@ -5,7 +5,7 @@ import click
 import os
 
 from utils import monitor
-from late_classifier.features import CustomHierarchicalExtractor
+from lc_classifier.features import CustomHierarchicalExtractor
 
 
 @click.command()
@@ -34,7 +34,6 @@ def main(
         node_id,
         job_id,
         logs_dir,
-        version,
         file_format
 ):
     """
