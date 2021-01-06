@@ -34,6 +34,7 @@ def main(
         node_id,
         job_id,
         logs_dir,
+        version,
         file_format
 ):
     """
