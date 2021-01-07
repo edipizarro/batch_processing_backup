@@ -44,8 +44,6 @@ def validate_config(config):
         "gaia_ztf",
         "ss_ztf",
         "reference",
-
-
         "dataquality",
         "xmatch",
         "probability",
@@ -89,6 +87,7 @@ def loader_save_and_upload(Loader, table_name, config, session, default_args, **
     )
     loader.psql_load_csv(config["outputs"][table_name], config["db"], table_name)
 
+
 def loader_create_csv(Loader, table_name, config, session, default_args, **kwargs):
     loader = Loader(source=config["sources"][table_name], read_args=default_args)
     loader.save_csv(
@@ -99,6 +98,7 @@ def loader_create_csv(Loader, table_name, config, session, default_args, **kwarg
         mode=config["csv_loader_config"]["mode"],
         **kwargs,
     )
+
 
 def loader_load_csv(Loader, table_name, config, session, default_args, **kwargs):
     Loader.psql_load_csv(config["outputs"][table_name], config["db"], table_name)
@@ -114,6 +114,11 @@ def loader_load_csv(Loader, table_name, config, session, default_args, **kwargs)
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
 def process_csv(config_file, loglevel):
+    """
+    Creates and uploads CSV files from source parquet to a PSQL database. The following arguments are required:
+
+    CONFIG_FILE: The path to a valid config.py file
+    """
     if not os.path.exists(config_file):
         raise Exception("Config file not found")
     sys.path.append(os.path.dirname(os.path.expanduser(config_file)))
@@ -220,6 +225,7 @@ def process_csv(config_file, loglevel):
         pass
     if config["tables"]["feature"]:
         pass
+
 
 @click.command()
 @click.argument("config_file")
@@ -231,6 +237,11 @@ def process_csv(config_file, loglevel):
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
 def create_csv(config_file, loglevel):
+    """
+    Creates CSV files from source parquet. The following arguments are required:
+
+    CONFIG_FILE: The path to a valid config.py file
+    """
     if not os.path.exists(config_file):
         raise Exception("Config file not found")
     sys.path.append(os.path.dirname(os.path.expanduser(config_file)))
@@ -337,7 +348,6 @@ def create_csv(config_file, loglevel):
         pass
     if config["tables"]["feature"]:
         pass
-
 
 
 @click.command()
@@ -350,6 +360,11 @@ def create_csv(config_file, loglevel):
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
 def psql_copy_csv(config_file, loglevel):
+    """
+    Uploads CSV files to a PSQL database. The following arguments are required:
+
+    CONFIG_FILE: The path to a valid config.py file
+    """
     if not os.path.exists(config_file):
         raise Exception("Config file not found")
     sys.path.append(os.path.dirname(os.path.expanduser(config_file)))

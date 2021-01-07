@@ -20,6 +20,10 @@ class ReferenceTableData(TableData):
                 "auxcandid",
                 self.apply_fun(fun, col("candid")).over(obj_rfid_cid_window),
             )
+            .withColumn("jdstartref", tt_ref.jdstartref - 2400000.5)
+            .withColumn("jdendref", tt_ref.jdendref - 2400000.5)
+            .withColumnRenamed("jdstartref", "mjdstartref")
+            .withColumnRenamed("jdendref", "mjdendref")
             .where(col("candid") == col("auxcandid"))
             .select("rfid", "objectId", *ref_col)
         )
