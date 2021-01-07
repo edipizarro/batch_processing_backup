@@ -160,7 +160,7 @@ def process_csv(config_file, loglevel):
             spark,
             default_args,
         )
-    if config["tables"]["ss"]:
+    if config["tables"]["ss_ztf"]:
         loader_save_and_upload(
             SSCSVLoader,
             "ss_ztf",
@@ -179,7 +179,7 @@ def process_csv(config_file, loglevel):
             spark,
             default_args,
         )
-    if config["tables"]["ps1"]:
+    if config["tables"]["ps1_ztf"]:
         loader_save_and_upload(
             PS1CSVLoader,
             "ps1_ztf",
@@ -189,7 +189,7 @@ def process_csv(config_file, loglevel):
             obj_cid_window=obj_cid_window,
             fun=min,
         )
-    if config["tables"]["ps1"]:
+    if config["tables"]["gaia_ztf"]:
         loader_save_and_upload(
             PS1CSVLoader,
             "gaia_ztf",
