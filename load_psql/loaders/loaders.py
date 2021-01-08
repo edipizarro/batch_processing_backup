@@ -17,15 +17,16 @@ import psycopg2
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
+
 def execute_copy(file, config, table_name):
-                # logging.info(f"Copying {file}")
-                con = psycopg2.connect(**config)
-                fileName = open(file)
-                cursor = con.cursor()
-                cursor.copy_from(fileName, table_name, sep=",", null="")
-                con.commit()
-                con.close()
-                fileName.close()
+    # logging.info(f"Copying {file}")
+    con = psycopg2.connect(**config)
+    fileName = open(file)
+    cursor = con.cursor()
+    cursor.copy_from(fileName, table_name, sep=",", null="")
+    con.commit()
+    con.close()
+    fileName.close()
 
 
 class CSVLoader(ABC):
@@ -55,11 +56,8 @@ class CSVLoader(ABC):
             n_partitions=n_partitions,
             max_records_per_file=max_records_per_file,
             mode=mode,
-            *args,
-            **kwargs,
         )
 
-    
     @classmethod
     def psql_load_csv(cls, csv_path: str, config: dict, table_name: str) -> None:
         names = glob.glob(csv_path + "/*")
