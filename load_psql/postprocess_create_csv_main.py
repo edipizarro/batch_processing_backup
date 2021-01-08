@@ -187,7 +187,6 @@ def process_csv(config_file, loglevel):
             spark,
             default_args,
             obj_cid_window=obj_cid_window,
-            fun=min,
         )
     if config["tables"]["gaia_ztf"]:
         loader_save_and_upload(
@@ -197,7 +196,6 @@ def process_csv(config_file, loglevel):
             spark,
             default_args,
             obj_cid_window=obj_cid_window,
-            fun=min,
         )
     if config["tables"]["reference"]:
         loader_save_and_upload(
@@ -207,7 +205,6 @@ def process_csv(config_file, loglevel):
             spark,
             default_args,
             tt_det=tt_det,
-            fun=min,
         )
 
     if config["tables"]["dataquality"]:
@@ -283,7 +280,7 @@ def create_csv(config_file, loglevel):
             spark,
             default_args,
         )
-    if config["tables"]["ss"]:
+    if config["tables"]["ss_ztf"]:
         loader_create_csv(
             SSCSVLoader,
             "ss_ztf",
@@ -302,7 +299,7 @@ def create_csv(config_file, loglevel):
             spark,
             default_args,
         )
-    if config["tables"]["ps1"]:
+    if config["tables"]["ps1_ztf"]:
         loader_create_csv(
             PS1CSVLoader,
             "ps1_ztf",
@@ -312,7 +309,7 @@ def create_csv(config_file, loglevel):
             obj_cid_window=obj_cid_window,
             fun=min,
         )
-    if config["tables"]["ps1"]:
+    if config["tables"]["gaia_ztf"]:
         loader_create_csv(
             PS1CSVLoader,
             "gaia_ztf",
@@ -406,7 +403,7 @@ def psql_copy_csv(config_file, loglevel):
             spark,
             default_args,
         )
-    if config["tables"]["ss"]:
+    if config["tables"]["ss_ztf"]:
         loader_load_csv(
             SSCSVLoader,
             "ss_ztf",
@@ -425,7 +422,7 @@ def psql_copy_csv(config_file, loglevel):
             spark,
             default_args,
         )
-    if config["tables"]["ps1"]:
+    if config["tables"]["ps1_ztf"]:
         loader_load_csv(
             PS1CSVLoader,
             "ps1_ztf",
@@ -435,7 +432,7 @@ def psql_copy_csv(config_file, loglevel):
             obj_cid_window=obj_cid_window,
             fun=min,
         )
-    if config["tables"]["ps1"]:
+    if config["tables"]["gaia_ztf"]:
         loader_load_csv(
             PS1CSVLoader,
             "gaia_ztf",

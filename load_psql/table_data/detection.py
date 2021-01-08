@@ -125,10 +125,3 @@ class DetectionTableData(TableData):
 
         sel_det = data_det.select(*[col(c) for c in det_col])
         return sel_det
-
-    def save(self, output_dir, n_partitions, max_records_per_file, mode, selected=None, *args, **kwargs):
-        # logging.info("Writing detections")
-        sel_det = selected or self.dataframe
-        sel_det.coalesce(n_partitions).write.option(
-            "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir, emptyValue="")

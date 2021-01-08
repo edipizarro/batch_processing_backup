@@ -19,10 +19,3 @@ class SSTableData(TableData):
             .select("objectId", "candid", *ss_col)
         )
         return tt_ss_min
-
-    def save(self, output_dir, n_partitions, max_records_per_file, mode, selected):
-        # logging.info("Writing ss")
-        tt_ss_min = selected or self.dataframe
-        tt_ss_min.coalesce(n_partitions).write.option(
-            "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir, emptyValue="")

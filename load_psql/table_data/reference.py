@@ -27,9 +27,3 @@ class ReferenceTableData(TableData):
         )
 
         return tt_ref_min
-
-    def save(self, output_dir, n_partitions, max_records_per_file, mode, selected=None):
-        sel_ref = selected or self.dataframe
-        sel_ref.coalesce(n_partitions).write.option(
-            "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir, emptyValue="")

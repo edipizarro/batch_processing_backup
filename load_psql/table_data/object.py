@@ -17,9 +17,3 @@ class ObjectTableData(TableData):
             *[col(c) for c in obj_col],
         )
         return sel_obj
-
-    def save(self, output_dir, n_partitions, max_records_per_file, mode, selected=None):
-        sel_obj = selected or self.dataframe
-        sel_obj.coalesce(n_partitions).write.option(
-            "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir, emptyValue="")

@@ -56,10 +56,3 @@ class PS1TableData(TableData):
         )
 
         return gr_ps1
-
-    def save(self, output_dir, n_partitions, max_records_per_file, mode, selected=None):
-        # logging.info("Writing ps1")
-        gr_ps1 = selected or self.dataframe
-        gr_ps1.coalesce(n_partitions).write.option(
-            "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir, emptyValue="")
