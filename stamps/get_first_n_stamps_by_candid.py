@@ -7,8 +7,7 @@ import pandas as pd
 @click.command()
 @click.argument("input_path", type=str)
 @click.argument("output_path", type=str)
-@click.argument("oids_file_path", type=str)
-@click.option("--nstamps", "-n", default=2, help="Number of first n detections")
+@click.argument("candids_file_path", type=str)
 @click.option(
     "--log",
     "loglevel",
@@ -16,7 +15,7 @@ import pandas as pd
     help="log level to use",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
-def get_stamps_by_oid(input_path, output_path, oids_file_path,  n_stamps, loglevel):
+def get_stamps_by_oid(input_path, output_path, candids_file_path, loglevel):
     """
     Get first n-stamps given a list of oids
 
@@ -26,7 +25,7 @@ def get_stamps_by_oid(input_path, output_path, oids_file_path,  n_stamps, loglev
     OUTPUT_PATH is the name of the output directory for detections parquet files.
     OUTPUT_PATH can be a local directory or a URI. For example a S3 URI like s3://ztf-historic-data/detections
 
-    OIDS_FILE_PATH is the name of the path to csv-file with oids. I
+    CANDIDS_FILE_PATH is the name of the path to csv-file with candids. I
 
     """
     from pyspark import SparkConf
@@ -44,12 +43,12 @@ def get_stamps_by_oid(input_path, output_path, oids_file_path,  n_stamps, loglev
     conf = SparkConf()
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
 
-    oids = pd.read_csv(oids_file_path)
-    oids = list(oids["oid"].values)
+    candid = pd.read_csv(candids_file_path)
+    candid = list(candid["oid"].values)
 
     # read from bucket
     ztf = spark.read.format("avro").load(input_path)
-    ztf = ztf.filter(col("objectId").isin(list(oids)))
+    ztf = ztf.filter(col("candid").isin(list(candid)))
 
     # select fields
     selection = ztf.select(
@@ -62,13 +61,7 @@ def get_stamps_by_oid(input_path, output_path, oids_file_path,  n_stamps, loglev
 
     selection = selection.dropDuplicates((['oid', 'candid']))
 
-    # select first n detections
-    w = Window.partitionBy("oid").orderBy("jd")
-    result = selection.withColumn("rownum", row_number().over(w)) \
-        .where(col("rownum") <= n_stamps) \
-        .drop("rownum")
-
-    result.write.save(output_path)
+    selection.write.save(output_path)
     total = time.time() - start
     logging.info("TOTAL_TIME=%s" % (str(total)))
     return
