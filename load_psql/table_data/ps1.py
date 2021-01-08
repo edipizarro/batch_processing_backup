@@ -1,12 +1,10 @@
 from .generic import TableData
 from pyspark.sql.functions import col, countDistinct
+from pyspark.sql.functions import min as spark_min
 from .table_columns import ps1_col
 
 
 class PS1TableData(TableData):
-    def apply_fun(self, fun, column):
-        return fun(col(column))
-
     def select(self, obj_cid_window, fun=min):
         # logging.info("Processing ps1")
         ps1_col.remove("objectId")
@@ -18,7 +16,7 @@ class PS1TableData(TableData):
 
         tt_ps1_min = (
             tt_ps1.withColumn(
-                "mincandid", self.apply_fun(min, "candid").over(obj_cid_window)
+                "mincandid", spark_min(col("candid")).over(obj_cid_window)
             )
             .where(col("candid") == col("mincandid"))
             .select("objectId", *ps1_col)

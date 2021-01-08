@@ -112,12 +112,12 @@ class SSTableDataTest(unittest.TestCase):
 
     @mock.patch("load_psql.table_data.ss.col")
     @mock.patch("load_psql.table_data.ss.Window")
-    @mock.patch("load_psql.table_data.ss.SSTableData.get_min")
-    def test_select(self, get_min, window, col):
+    @mock.patch("load_psql.table_data.ss.spark_min")
+    def test_select(self, spark_min, window, col):
         from load_psql.table_data.table_columns import ss_col
 
         tt_det = mock.MagicMock()
-        ssmin, window = self.table_data.select(tt_det)
+        ssmin = self.table_data.select(tt_det, mock.MagicMock())
         self.assertNotIn("objectId", ss_col)
         self.assertNotIn("candid", ss_col)
         self.assertIsNotNone(ssmin)
@@ -201,8 +201,8 @@ class PS1TableDataTest(unittest.TestCase):
 
     @mock.patch("load_psql.table_data.ps1.col")
     @mock.patch("load_psql.table_data.ps1.countDistinct")
-    @mock.patch("load_psql.table_data.ps1.PS1TableData.apply_fun")
-    def test_select(self, fun, lit, col):
+    @mock.patch("load_psql.table_data.ps1.spark_min")
+    def test_select(self, spark_min, lit, col):
         from load_psql.table_data.table_columns import ps1_col
 
         resp = self.table_data.select(mock.MagicMock())
@@ -232,9 +232,10 @@ class GaiaTableDataTest(unittest.TestCase):
 
     @mock.patch("load_psql.table_data.gaia.col")
     @mock.patch("load_psql.table_data.gaia.countDistinct")
-    @mock.patch("load_psql.table_data.gaia.GaiaTableData.apply_fun")
+    @mock.patch("load_psql.table_data.gaia.spark_min")
+    @mock.patch("load_psql.table_data.gaia.spark_abs")
     @mock.patch("load_psql.table_data.gaia.GaiaTableData.compare_threshold")
-    def test_select(self, comp_threshold, fun, count, col):
+    def test_select(self, comp_threshold, spark_abs, spark_min, count, col):
         from load_psql.table_data.table_columns import gaia_col
 
         resp = self.table_data.select(mock.MagicMock(), mock.MagicMock())
@@ -263,11 +264,11 @@ class ReferenceTableDataTest(unittest.TestCase):
 
     @mock.patch("load_psql.table_data.reference.col")
     @mock.patch("load_psql.table_data.reference.Window")
-    @mock.patch("load_psql.table_data.reference.ReferenceTableData.apply_fun")
-    def test_select(self, fun, window, col):
+    @mock.patch("load_psql.table_data.reference.spark_min")
+    def test_select(self, spark_min, window, col):
         from load_psql.table_data.table_columns import ref_col
 
-        resp = self.table_data.select(mock.MagicMock(), mock.MagicMock())
+        resp = self.table_data.select(mock.MagicMock())
         self.assertNotIn("objectId", ref_col)
         self.assertNotIn("rfid", ref_col)
 
