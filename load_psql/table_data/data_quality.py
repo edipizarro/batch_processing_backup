@@ -1,14 +1,13 @@
 from .generic import TableData
 from pyspark.sql.functions import col
-from .table_columns import qua_col
 
 
 class DataQualityTableData(TableData):
-    def select(self, tt_det):
+    def select(self, column_list, tt_det):
         # logging.info("Processing dataquality")
-        qua_col.remove("objectId")
-        qua_col.remove("candid")
+        column_list.remove("objectId")
+        column_list.remove("candid")
         tt_qua = tt_det.select(
-            "objectId", "candid", *[col("c." + c).alias(c) for c in qua_col]
+            "objectId", "candid", *[col("c." + c).alias(c) for c in column_list]
         )
         return tt_qua

@@ -1,19 +1,18 @@
 from .generic import TableData
-from .table_columns import obj_col
 from pyspark.sql.types import IntegerType
 from pyspark.sql.functions import col
 
 
 class ObjectTableData(TableData):
-    def select(self):
-        obj_col.remove("objectId")
-        obj_col.remove("ndethist")
-        obj_col.remove("ncovhist")
+    def select(self, column_list):
+        column_list.remove("objectId")
+        column_list.remove("ndethist")
+        column_list.remove("ncovhist")
 
         sel_obj = self.dataframe.select(
             "objectId",
             self.dataframe.ndethist.cast(IntegerType()),
             self.dataframe.ncovhist.cast(IntegerType()),
-            *[col(c) for c in obj_col],
+            *[col(c) for c in column_list],
         )
         return sel_obj

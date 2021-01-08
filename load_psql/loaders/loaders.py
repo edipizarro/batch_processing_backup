@@ -45,11 +45,12 @@ class CSVLoader(ABC):
         n_partitions: int,
         max_records_per_file: int,
         mode: str,
+        column_list: list,
         *args,
         **kwargs,
     ) -> None:
         tabledata = self.create_table_data(spark_session, self.source, self.read_args)
-        selected_data = tabledata.select(*args, **kwargs)
+        selected_data = tabledata.select(column_list=column_list, *args, **kwargs)
         tabledata.save(
             output_dir=output_path,
             selected=selected_data,
