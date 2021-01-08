@@ -1,16 +1,15 @@
 from .generic import TableData
-from .table_columns import ref_col
 from pyspark.sql import Window
 from pyspark.sql.functions import col
 from pyspark.sql.functions import min as spark_min
 
 
 class ReferenceTableData(TableData):
-    def select(self, tt_det):
-        ref_col.remove("objectId")
-        ref_col.remove("rfid")
+    def select(self, column_list, tt_det):
+        column_list.remove("objectId")
+        column_list.remove("rfid")
 
-        tt_ref = tt_det.select("rfid", "objectId", *[col(c) for c in ref_col])
+        tt_ref = tt_det.select("rfid", "objectId", *[col(c) for c in column_list])
         obj_rfid_cid_window = Window.partitionBy("objectId", "rfid").orderBy("candid")
 
         tt_ref_min = (
@@ -23,7 +22,7 @@ class ReferenceTableData(TableData):
             .withColumnRenamed("jdstartref", "mjdstartref")
             .withColumnRenamed("jdendref", "mjdendref")
             .where(col("candid") == col("auxcandid"))
-            .select("rfid", "objectId", *ref_col)
+            .select("rfid", "objectId", *column_list)
         )
 
         return tt_ref_min

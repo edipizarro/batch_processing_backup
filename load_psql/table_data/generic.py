@@ -13,7 +13,7 @@ class TableData(ABC):
             self.dataframe = None
 
     @abstractmethod
-    def select(self) -> DataFrame:
+    def select(self, column_list: list) -> DataFrame:
         pass
 
     def save(self, output_dir, n_partitions, max_records_per_file, mode, selected=None):

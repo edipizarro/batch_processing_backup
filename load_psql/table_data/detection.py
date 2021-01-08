@@ -1,6 +1,5 @@
 from load_psql.table_data import TableData
 from pyspark.sql import DataFrame, DataFrameReader, SparkSession
-from .table_columns import det_col
 from pyspark.sql.functions import (
     col,
     lit,
@@ -9,7 +8,7 @@ from pyspark.sql.types import IntegerType
 
 
 class DetectionTableData(TableData):
-    def select(self, tt_det: DataFrame, step_id: str) -> DataFrame:
+    def select(self, column_list: list, tt_det: DataFrame, step_id: str) -> DataFrame:
         data_det = (
             tt_det.select(
                 "i.aimage",
@@ -112,5 +111,5 @@ class DetectionTableData(TableData):
         data_det = data_det.fillna("", "rbversion")
         data_det = data_det.fillna("", "drbversion")
 
-        sel_det = data_det.select(*[col(c) for c in det_col])
+        sel_det = data_det.select(*[col(c) for c in column_list])
         return sel_det
