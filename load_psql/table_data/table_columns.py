@@ -168,8 +168,8 @@ ref_col = [
     "sharpnr",
     "ranr",
     "decnr",
-    "jdstartref",
-    "jdendref",
+    "mjdstartref",
+    "mjdendref",
     "nframesref",
 ]
 

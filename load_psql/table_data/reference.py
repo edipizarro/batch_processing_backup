@@ -33,10 +33,10 @@ class ReferenceTableData(TableData):
                 "auxcandid",
                 spark_min(col("candid")).over(obj_rfid_cid_window),
             )
-            .withColumn("jdstartref", tt_ref["i.jdstartref"] - 2400000.5)
-            .withColumn("jdendref", tt_ref["i.jdendref"] - 2400000.5)
-            .withColumnRenamed("jdstartref", "mjdstartref")
-            .withColumnRenamed("jdendref", "mjdendref")
+            .withColumn("i.jdstartref", tt_ref["i.jdstartref"] - 2400000.5)
+            .withColumn("i.jdendref", tt_ref["i.jdendref"] - 2400000.5)
+            .withColumnRenamed("i.jdstartref", "mjdstartref")
+            .withColumnRenamed("i.jdendref", "mjdendref")
             .where(col("candid") == col("auxcandid"))
             .select(*[col(c) for c in column_list])
         )
