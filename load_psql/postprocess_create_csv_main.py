@@ -174,13 +174,13 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
             config,
             spark,
             default_args,
-            det_col,
+            det_col.copy(),
             tt_det=tt_det,
             step_id=step_id,
         )
     if config["tables"]["object"]:
         loader_save_and_upload(
-            ObjectsCSVLoader, "object", config, spark, default_args, obj_col
+            ObjectsCSVLoader, "object", config, spark, default_args, obj_col.copy()
         )
     if config["tables"]["non_detection"]:
         loader_save_and_upload(
@@ -189,7 +189,7 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
             config,
             spark,
             default_args,
-            non_col,
+            non_col.copy(),
         )
     if config["tables"]["ss_ztf"]:
         loader_save_and_upload(
@@ -198,14 +198,14 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
             config,
             spark,
             default_args,
-            ss_col,
+            ss_col.copy(),
             tt_det=tt_det,
             obj_cid_window=obj_cid_window,
         )
 
     if config["tables"]["magstats"]:
         loader_save_and_upload(
-            MagstatsCSVLoader, "magstats", config, spark, default_args, mag_col
+            MagstatsCSVLoader, "magstats", config, spark, default_args, mag_col.copy()
         )
     if config["tables"]["ps1_ztf"]:
         loader_save_and_upload(
@@ -214,7 +214,7 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
             config,
             spark,
             default_args,
-            ps1_col,
+            ps1_col.copy(),
             obj_cid_window=obj_cid_window,
         )
     if config["tables"]["gaia_ztf"]:
@@ -224,7 +224,7 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
             config,
             spark,
             default_args,
-            gaia_col,
+            gaia_col.copy(),
             obj_cid_window=obj_cid_window,
         )
     if config["tables"]["reference"]:
@@ -234,7 +234,7 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
             config,
             spark,
             default_args,
-            ref_col,
+            ref_col.copy(),
             tt_det=tt_det,
         )
 
@@ -245,7 +245,7 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
             config,
             spark,
             default_args,
-            qua_col,
+            qua_col.copy(),
             tt_det=tt_det,
         )
     if config["tables"]["xmatch"]:
@@ -305,13 +305,13 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
             config,
             spark,
             default_args,
-            det_col,
+            det_col.copy(),
             tt_det=tt_det,
             step_id=step_id,
         )
     if config["tables"]["object"]:
         loader_create_csv(
-            ObjectsCSVLoader, "object", config, spark, default_args, obj_col
+            ObjectsCSVLoader, "object", config, spark, default_args, obj_col.copy()
         )
     if config["tables"]["non_detection"]:
         loader_create_csv(
@@ -320,7 +320,7 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
             config,
             spark,
             default_args,
-            non_col,
+            non_col.copy(),
         )
     if config["tables"]["ss_ztf"]:
         loader_create_csv(
@@ -329,14 +329,14 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
             config,
             spark,
             default_args,
-            ss_col,
+            ss_col.copy(),
             tt_det=tt_det,
             obj_cid_window=obj_cid_window,
         )
 
     if config["tables"]["magstats"]:
         loader_create_csv(
-            MagstatsCSVLoader, "magstats", config, spark, default_args, mag_col
+            MagstatsCSVLoader, "magstats", config, spark, default_args, mag_col.copy()
         )
     if config["tables"]["ps1_ztf"]:
         loader_create_csv(
@@ -345,7 +345,7 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
             config,
             spark,
             default_args,
-            ps1_col,
+            ps1_col.copy(),
             obj_cid_window=obj_cid_window,
         )
     if config["tables"]["gaia_ztf"]:
@@ -355,7 +355,7 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
             config,
             spark,
             default_args,
-            gaia_col,
+            gaia_col.copy(),
             obj_cid_window=obj_cid_window,
         )
     if config["tables"]["reference"]:
@@ -365,7 +365,7 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
             config,
             spark,
             default_args,
-            ref_col,
+            ref_col.copy(),
             tt_det=tt_det,
         )
 
@@ -376,7 +376,7 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
             config,
             spark,
             default_args,
-            qua_col,
+            qua_col.copy(),
             tt_det=tt_det,
         )
     if config["tables"]["xmatch"]:
