@@ -16,6 +16,8 @@ class TableData(ABC):
     def select(self) -> DataFrame:
         pass
 
-    @abstractmethod
-    def save(self, output_path: str, selected_data: DataFrame = None) -> None:
-        pass
+    def save(self, output_dir, n_partitions, max_records_per_file, mode, selected=None):
+        df = selected or self.dataframe
+        df.coalesce(n_partitions).write.option(
+            "maxRecordsPerFile", max_records_per_file
+        ).mode(mode).csv(output_dir, emptyValue="")
