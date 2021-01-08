@@ -16,6 +16,13 @@ class ReferenceTableData(TableData):
             "i.field",
             "i.magnr",
             "i.sigmagnr",
+            "chinr",
+            "sharpnr",
+            "ranr",
+            "decnr",
+            "jdstartref",
+            "jdendref",
+            "nframesref",
         ]
 
         tt_ref = tt_det.select(tmp_cols)
