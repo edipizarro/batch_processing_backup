@@ -336,7 +336,6 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
             spark,
             default_args,
             obj_cid_window=obj_cid_window,
-            fun=min,
         )
     if config["tables"]["gaia_ztf"]:
         loader_create_csv(
@@ -346,7 +345,6 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
             spark,
             default_args,
             obj_cid_window=obj_cid_window,
-            fun=min,
         )
     if config["tables"]["reference"]:
         loader_create_csv(
@@ -356,7 +354,6 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
             spark,
             default_args,
             tt_det=tt_det,
-            fun=min,
         )
 
     if config["tables"]["dataquality"]:
@@ -473,7 +470,6 @@ def psql_copy_csv(
             spark,
             default_args,
             obj_cid_window=obj_cid_window,
-            fun=min,
         )
     if config["tables"]["gaia_ztf"]:
         loader_load_csv(
@@ -483,7 +479,6 @@ def psql_copy_csv(
             spark,
             default_args,
             obj_cid_window=obj_cid_window,
-            fun=min,
         )
     if config["tables"]["reference"]:
         loader_load_csv(
@@ -493,7 +488,6 @@ def psql_copy_csv(
             spark,
             default_args,
             tt_det=tt_det,
-            fun=min,
         )
 
     if config["tables"]["dataquality"]:

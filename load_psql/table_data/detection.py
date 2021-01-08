@@ -1,17 +1,6 @@
 from load_psql.table_data import TableData
 from pyspark.sql import DataFrame, DataFrameReader, SparkSession
-from .table_columns import (
-    det_col,
-    obj_col,
-    non_col,
-    ss_col,
-    qua_col,
-    mag_col,
-    ps1_col,
-    gaia_col,
-    ref_col,
-    xch_col,
-)
+from .table_columns import det_col
 from pyspark.sql.functions import (
     col,
     lit,
