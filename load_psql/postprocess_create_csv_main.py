@@ -117,7 +117,8 @@ def loader_create_csv(
         n_partitions=config["csv_loader_config"]["n_partitions"],
         max_records_per_file=config["csv_loader_config"]["max_records_per_file"],
         mode=config["csv_loader_config"]["mode"],
-        column_list=column_list ** kwargs,
+        column_list=column_list,
+        **kwargs,
     )
 
 
