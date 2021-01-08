@@ -16,13 +16,13 @@ class ReferenceTableData(TableData):
             "i.field",
             "i.magnr",
             "i.sigmagnr",
-            "chinr",
-            "sharpnr",
-            "ranr",
-            "decnr",
-            "jdstartref",
-            "jdendref",
-            "nframesref",
+            "i.chinr",
+            "i.sharpnr",
+            "i.ranr",
+            "i.decnr",
+            "i.jdstartref",
+            "i.jdendref",
+            "i.nframesref",
         ]
 
         tt_ref = tt_det.select(tmp_cols)
@@ -33,12 +33,12 @@ class ReferenceTableData(TableData):
                 "auxcandid",
                 spark_min(col("candid")).over(obj_rfid_cid_window),
             )
-            .withColumn("jdstartref", tt_ref.jdstartref - 2400000.5)
-            .withColumn("jdendref", tt_ref.jdendref - 2400000.5)
+            .withColumn("jdstartref", tt_ref["i.jdstartref"] - 2400000.5)
+            .withColumn("jdendref", tt_ref["i.jdendref"] - 2400000.5)
             .withColumnRenamed("jdstartref", "mjdstartref")
             .withColumnRenamed("jdendref", "mjdendref")
             .where(col("candid") == col("auxcandid"))
-            .select(*column_list)
+            .select(*[col(c) for c in column_list])
         )
 
         return tt_ref_min
