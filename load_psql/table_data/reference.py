@@ -9,7 +9,7 @@ class ReferenceTableData(TableData):
         column_list.remove("objectId")
         column_list.remove("rfid")
 
-        tt_ref = tt_det.select("rfid", "objectId", *[col(c) for c in column_list])
+        tt_ref = tt_det.select("i.rfid", "objectId", *[col(c) for c in column_list])
         obj_rfid_cid_window = Window.partitionBy("objectId", "rfid").orderBy("candid")
 
         tt_ref_min = (
