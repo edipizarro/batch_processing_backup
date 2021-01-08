@@ -1,12 +1,11 @@
 from .generic import TableData
 from .table_columns import gaia_col
 from pyspark.sql.functions import col, countDistinct
+from pyspark.sql.functions import min as spark_min
+from pyspark.sql.functions import abs as spark_abs
 
 
 class GaiaTableData(TableData):
-    def apply_fun(self, fun, column):
-        return fun(column)
-
     def compare_threshold(self, val, threshold):
         return val > threshold
 
@@ -21,7 +20,8 @@ class GaiaTableData(TableData):
 
         tt_gaia_min = (
             tt_gaia.withColumn(
-                "mincandid", self.apply_fun(min, col("candid")).over(obj_cid_window)
+                "mincandid",
+                spark_min(col("candid")).over(obj_cid_window),
             )
             .where(col("candid") == col("mincandid"))
             .select("objectId", "candid", *gaia_col)
@@ -39,7 +39,7 @@ class GaiaTableData(TableData):
             .withColumn(
                 "unique1",
                 self.compare_threshold(
-                    self.apply_fun(abs, col("min_maggaia") - col("maggaia")),
+                    spark_abs(col("min_maggaia") - col("maggaia")),
                     real_threshold,
                 ),
             )

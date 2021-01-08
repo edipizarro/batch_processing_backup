@@ -2,13 +2,11 @@ from .generic import TableData
 from .table_columns import ref_col
 from pyspark.sql import Window
 from pyspark.sql.functions import col
+from pyspark.sql.functions import min as spark_min
 
 
 class ReferenceTableData(TableData):
-    def apply_fun(self, fun, column):
-        return fun(column)
-
-    def select(self, tt_det, fun=min):
+    def select(self, tt_det):
         ref_col.remove("objectId")
         ref_col.remove("rfid")
 
@@ -18,7 +16,7 @@ class ReferenceTableData(TableData):
         tt_ref_min = (
             tt_ref.withColumn(
                 "auxcandid",
-                self.apply_fun(fun, col("candid")).over(obj_rfid_cid_window),
+                spark_min(col("candid")).over(obj_rfid_cid_window),
             )
             .withColumn("jdstartref", tt_ref.jdstartref - 2400000.5)
             .withColumn("jdendref", tt_ref.jdendref - 2400000.5)
