@@ -17,12 +17,17 @@ import os
 import sys
 
 
-def create_session():
+def create_session(spark_driver_memory=None, spark_local_dir=None):
 
     # logging.info("Creating spark session")
     conf = SparkConf()
     conf.set("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.2")
     conf.set("fs.s3.impl", "org.apache.hadoop.fs.s3native.NativeS3FileSystem")
+    if spark_driver_memory:
+        conf.set("spark.driver.memory", spark_driver_memory)
+
+    if spark_local_dir:
+        conf.set("spark.local.dir", spark_local_dir)
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
     spark.sparkContext.setLogLevel("WARN")
     return spark
@@ -113,7 +118,19 @@ def loader_load_csv(Loader, table_name, config, session, default_args, **kwargs)
     help="log level to use",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
-def process_csv(config_file, loglevel):
+@click.option(
+    "--spark.driver.memory",
+    "spark_driver_memory",
+    help="spark.driver.memory config, for example: 10g",
+    type=str,
+)
+@click.option(
+    "--spark.local.dir",
+    "spark_local_dir",
+    help="spark.local.dir config",
+    type=str,
+)
+def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=None):
     """
     Creates and uploads CSV files from source parquet to a PSQL database. The following arguments are required:
 
@@ -127,7 +144,7 @@ def process_csv(config_file, loglevel):
     valid, message = validate_config(config)
     if not valid:
         raise Exception(message)
-    spark = create_session()
+    spark = create_session(spark_driver_memory, spark_local_dir)
     default_args = {}
     tt_det = get_tt_det(
         spark, config["sources"]["detection"], config["sources"]["raw_detection"]
@@ -233,7 +250,19 @@ def process_csv(config_file, loglevel):
     help="log level to use",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
-def create_csv(config_file, loglevel):
+@click.option(
+    "--spark.driver.memory",
+    "spark_driver_memory",
+    help="spark.driver.memory config, for example: 10g",
+    type=str,
+)
+@click.option(
+    "--spark.local.dir",
+    "spark_local_dir",
+    help="spark.local.dir config",
+    type=str,
+)
+def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=None):
     """
     Creates CSV files from source parquet. The following arguments are required:
 
@@ -247,7 +276,7 @@ def create_csv(config_file, loglevel):
     valid, message = validate_config(config)
     if not valid:
         raise Exception(message)
-    spark = create_session()
+    spark = create_session(spark_driver_memory, spark_local_dir)
     default_args = {}
     tt_det = get_tt_det(
         spark, config["sources"]["detection"], config["sources"]["raw_detection"]
@@ -356,7 +385,21 @@ def create_csv(config_file, loglevel):
     help="log level to use",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
-def psql_copy_csv(config_file, loglevel):
+@click.option(
+    "--spark.driver.memory",
+    "spark_driver_memory",
+    help="spark.driver.memory config, for example: 10g",
+    type=str,
+)
+@click.option(
+    "--spark.local.dir",
+    "spark_local_dir",
+    help="spark.local.dir config",
+    type=str,
+)
+def psql_copy_csv(
+    config_file, loglevel, spark_driver_memory=None, spark_local_dir=None
+):
     """
     Uploads CSV files to a PSQL database. The following arguments are required:
 
@@ -370,7 +413,7 @@ def psql_copy_csv(config_file, loglevel):
     valid, message = validate_config(config)
     if not valid:
         raise Exception(message)
-    spark = create_session()
+    spark = create_session(spark_driver_memory, spark_local_dir)
     default_args = {}
     tt_det = get_tt_det(
         spark, config["sources"]["detection"], config["sources"]["raw_detection"]
