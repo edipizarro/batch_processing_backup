@@ -351,7 +351,7 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
         )
     if config["tables"]["gaia_ztf"]:
         loader_create_csv(
-            PS1CSVLoader,
+            GaiaCSVLoader,
             "gaia_ztf",
             config,
             spark,
