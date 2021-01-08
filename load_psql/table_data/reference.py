@@ -6,12 +6,19 @@ from pyspark.sql.functions import min as spark_min
 
 class ReferenceTableData(TableData):
     def select(self, column_list, tt_det):
-        column_list.remove("objectId")
-        column_list.remove("rfid")
 
-        column_list[column_list.index("fid")] = "i.fid"
+        tmp_cols = [
+            "i.rfid",
+            "objectId",
+            "candid",
+            "i.fid",
+            "i.rcid",
+            "i.field",
+            "i.magnr",
+            "i.sigmagnr",
+        ]
 
-        tt_ref = tt_det.select("i.rfid", "objectId", *[col(c) for c in column_list])
+        tt_ref = tt_det.select(tmp_cols)
         obj_rfid_cid_window = Window.partitionBy("objectId", "rfid").orderBy("candid")
 
         tt_ref_min = (
@@ -24,7 +31,7 @@ class ReferenceTableData(TableData):
             .withColumnRenamed("jdstartref", "mjdstartref")
             .withColumnRenamed("jdendref", "mjdendref")
             .where(col("candid") == col("auxcandid"))
-            .select("rfid", "objectId", *column_list)
+            .select(*column_list)
         )
 
         return tt_ref_min
