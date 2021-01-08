@@ -357,6 +357,8 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
             spark,
             default_args,
             gaia_col.copy(),
+            tt_det=tt_det,
+            real_threshold=1e-4,
             obj_cid_window=obj_cid_window,
         )
     if config["tables"]["reference"]:
