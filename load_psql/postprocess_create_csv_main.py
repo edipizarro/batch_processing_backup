@@ -131,7 +131,7 @@ def get_config(path: str) -> dict:
         raise Exception("Config file not found")
     with open(path) as f:
         data = json.load(f)
-        return data
+        return data["load_psql_config"]
 
 
 @click.command()
@@ -161,7 +161,7 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
 
     CONFIG_FILE: The path to a valid config.py file
     """
-
+    config = get_config(config_file)
     valid, message = validate_config(config)
     if not valid:
         raise Exception(message)
@@ -288,11 +288,7 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
 
     CONFIG_FILE: The path to a valid config.py file
     """
-    if not os.path.exists(config_file):
-        raise Exception("Config file not found")
-    sys.path.append(os.path.dirname(os.path.expanduser(config_file)))
-    from config import load_config as config
-
+    config = get_config(config_file)
     valid, message = validate_config(config)
     if not valid:
         raise Exception(message)
@@ -423,10 +419,7 @@ def psql_copy_csv(
 
     CONFIG_FILE: The path to a valid config.py file
     """
-    if not os.path.exists(config_file):
-        raise Exception("Config file not found")
-    sys.path.append(os.path.dirname(os.path.expanduser(config_file)))
-    from config import load_config as config
+    config = get_config(config_file)
 
     valid, message = validate_config(config)
     if not valid:
