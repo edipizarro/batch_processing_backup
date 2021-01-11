@@ -44,6 +44,7 @@ class PS1TableData(TableData):
             .withColumn("unique1", col("min_objectidps1") != col("objectidps1"))
             .withColumn("unique2", col("min_objectidps2") != col("objectidps2"))
             .withColumn("unique3", col("min_objectidps3") != col("objectidps3"))
+            .fillna({"nmtchps": 0})
             .drop("min_objectidps1")
             .drop("min_objectidps2")
             .drop("min_objectidps3")
