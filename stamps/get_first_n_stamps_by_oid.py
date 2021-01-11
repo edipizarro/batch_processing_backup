@@ -16,7 +16,7 @@ import pandas as pd
     help="log level to use",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
-def get_stamps_by_oid(input_path, output_path, oids_file_path,  n_stamps, loglevel):
+def get_stamps_by_oid(input_path, output_path, oids_file_path,  nstamps, loglevel):
     """
     Get first n-stamps given a list of oids
 
@@ -65,7 +65,7 @@ def get_stamps_by_oid(input_path, output_path, oids_file_path,  n_stamps, loglev
     # select first n detections
     w = Window.partitionBy("oid").orderBy("jd")
     result = selection.withColumn("rownum", row_number().over(w)) \
-        .where(col("rownum") <= n_stamps) \
+        .where(col("rownum") <= nstamps) \
         .drop("rownum")
 
     result.write.save(output_path)
