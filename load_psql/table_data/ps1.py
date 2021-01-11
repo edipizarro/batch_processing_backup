@@ -16,7 +16,8 @@ class PS1TableData(TableData):
             "objectId",
             *[
                 col(c).cast(IntegerType())
-                if c in ["candid", "objectidps1", "objectidps2", "objectidps3"]
+                if c
+                in ["candid", "objectidps1", "objectidps2", "objectidps3", "nmtchps"]
                 else col(c)
                 for c in column_list
             ],
