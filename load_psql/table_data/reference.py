@@ -2,6 +2,7 @@ from .generic import TableData
 from pyspark.sql import Window
 from pyspark.sql.functions import col
 from pyspark.sql.functions import min as spark_min
+from pyspark.sql.types import IntegerType
 
 
 class ReferenceTableData(TableData):
@@ -38,7 +39,12 @@ class ReferenceTableData(TableData):
             .withColumnRenamed("i.jdstartref", "mjdstartref")
             .withColumnRenamed("i.jdendref", "mjdendref")
             .where(col("candid") == col("auxcandid"))
-            .select(*[col(c) for c in column_list])
+            .select(
+                *[
+                    col(c).cast(IntegerType()) if c in ["rfid", "candid"] else col(c)
+                    for c in column_list
+                ]
+            )
         )
 
         return tt_ref_min

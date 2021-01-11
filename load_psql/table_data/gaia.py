@@ -2,6 +2,7 @@ from .generic import TableData
 from pyspark.sql.functions import col, countDistinct
 from pyspark.sql.functions import min as spark_min
 from pyspark.sql.functions import abs as spark_abs
+from pyspark.sql.types import IntegerType
 
 
 class GaiaTableData(TableData):

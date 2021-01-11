@@ -1,6 +1,7 @@
 from .generic import TableData
 from pyspark.sql.functions import col, countDistinct
 from pyspark.sql.functions import min as spark_min
+from pyspark.sql.types import IntegerType
 
 
 class PS1TableData(TableData):
@@ -11,7 +12,15 @@ class PS1TableData(TableData):
         column_list.remove("unique2")
         column_list.remove("unique3")
 
-        tt_ps1 = self.dataframe.select("objectId", *[col(c) for c in column_list])
+        tt_ps1 = self.dataframe.select(
+            "objectId",
+            *[
+                col(c).cast(IntegerType())
+                if c in ["candid", "objectidps1", "objectidps2", "objectidps3"]
+                else col(c)
+                for c in column_list
+            ],
+        )
 
         tt_ps1_min = (
             tt_ps1.withColumn(
@@ -26,9 +35,9 @@ class PS1TableData(TableData):
             .join(tt_ps1.alias("c"), "objectId", "inner")
             .select(
                 "objectId",
-                col("i.objectidps1").alias("min_objectidps1"),
-                col("i.objectidps2").alias("min_objectidps2"),
-                col("i.objectidps3").alias("min_objectidps3"),
+                col("i.objectidps1").alias("min_objectidps1").cast(IntegerType()),
+                col("i.objectidps2").alias("min_objectidps2").cast(IntegerType()),
+                col("i.objectidps3").alias("min_objectidps3").cast(IntegerType()),
                 *[col("i." + c).alias(c) for c in column_list],
             )
             .withColumn("unique1", col("min_objectidps1") != col("objectidps1"))
@@ -39,8 +48,10 @@ class PS1TableData(TableData):
             .drop("min_objectidps3")
         )
 
+        column_list.remove("candid")
+        column_list_cast = []
         gr_ps1 = (
-            data_ps1.groupBy("objectId", *column_list)
+            data_ps1.groupBy("objectId", "candid", *column_list)
             .agg(
                 countDistinct("unique1").alias("count1"),
                 countDistinct("unique2").alias("count2"),

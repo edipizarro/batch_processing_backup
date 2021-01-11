@@ -25,7 +25,7 @@ from pyspark.sql import SparkSession, Window
 from pyspark import SparkConf, SparkContext
 import click
 import os
-import sys
+import json
 
 
 def create_session(spark_driver_memory=None, spark_local_dir=None):
@@ -126,6 +126,14 @@ def loader_load_csv(Loader, table_name, config, session, default_args, **kwargs)
     Loader.psql_load_csv(config["outputs"][table_name], config["db"], table_name)
 
 
+def get_config(path: str) -> dict:
+    if not os.path.exists(path):
+        raise Exception("Config file not found")
+    with open(path) as f:
+        data = json.load(f)
+        return data
+
+
 @click.command()
 @click.argument("config_file")
 @click.option(
@@ -153,10 +161,6 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
 
     CONFIG_FILE: The path to a valid config.py file
     """
-    if not os.path.exists(config_file):
-        raise Exception("Config file not found")
-    sys.path.append(os.path.dirname(os.path.expanduser(config_file)))
-    from config import load_config as config
 
     valid, message = validate_config(config)
     if not valid:
@@ -427,29 +431,22 @@ def psql_copy_csv(
     valid, message = validate_config(config)
     if not valid:
         raise Exception(message)
-    spark = create_session(spark_driver_memory, spark_local_dir)
     default_args = {}
-    tt_det = get_tt_det(
-        spark, config["sources"]["detection"], config["sources"]["raw_detection"]
-    )
-    step_id = "bulk_1.0.0"
-    obj_cid_window = Window.partitionBy("objectId").orderBy("candid")
+
     if config["tables"]["detection"]:
         loader_load_csv(
             DetectionsCSVLoader,
             "detection",
             config,
-            spark,
+            None,
             default_args,
-            tt_det=tt_det,
-            step_id=step_id,
         )
     if config["tables"]["object"]:
         loader_load_csv(
             ObjectsCSVLoader,
             "object",
             config,
-            spark,
+            None,
             default_args,
         )
     if config["tables"]["non_detection"]:
@@ -457,7 +454,7 @@ def psql_copy_csv(
             NonDetectionsCSVLoader,
             "non_detection",
             config,
-            spark,
+            None,
             default_args,
         )
     if config["tables"]["ss_ztf"]:
@@ -465,10 +462,8 @@ def psql_copy_csv(
             SSCSVLoader,
             "ss_ztf",
             config,
-            spark,
+            None,
             default_args,
-            tt_det=tt_det,
-            obj_cid_window=obj_cid_window,
         )
 
     if config["tables"]["magstats"]:
@@ -476,7 +471,7 @@ def psql_copy_csv(
             MagstatsCSVLoader,
             "magstats",
             config,
-            spark,
+            None,
             default_args,
         )
     if config["tables"]["ps1_ztf"]:
@@ -484,27 +479,24 @@ def psql_copy_csv(
             PS1CSVLoader,
             "ps1_ztf",
             config,
-            spark,
+            None,
             default_args,
-            obj_cid_window=obj_cid_window,
         )
     if config["tables"]["gaia_ztf"]:
         loader_load_csv(
             PS1CSVLoader,
             "gaia_ztf",
             config,
-            spark,
+            None,
             default_args,
-            obj_cid_window=obj_cid_window,
         )
     if config["tables"]["reference"]:
         loader_load_csv(
             ReferenceCSVLoader,
             "reference",
             config,
-            spark,
+            None,
             default_args,
-            tt_det=tt_det,
         )
 
     if config["tables"]["dataquality"]:
@@ -512,9 +504,8 @@ def psql_copy_csv(
             DataQualityCSVLoader,
             "dataquality",
             config,
-            spark,
+            None,
             default_args,
-            tt_det=tt_det,
         )
     if config["tables"]["xmatch"]:
         pass

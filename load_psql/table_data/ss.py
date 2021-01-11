@@ -2,6 +2,7 @@ from .generic import TableData
 from pyspark.sql.functions import col
 from pyspark.sql.functions import min as spark_min
 from pyspark.sql import Window
+from pyspark.sql.types import IntegerType
 
 
 class SSTableData(TableData):
@@ -15,6 +16,6 @@ class SSTableData(TableData):
         tt_ss_min = (
             tt_ss.withColumn("mincandid", spark_min(col("candid")).over(obj_cid_window))
             .where(col("candid") == col("mincandid"))
-            .select("objectId", "candid", *column_list)
+            .select("objectId", tt_ss["candid"].cast(IntegerType()), *column_list)
         )
         return tt_ss_min
