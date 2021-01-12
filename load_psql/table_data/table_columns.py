@@ -51,6 +51,8 @@ obj_col = [
     "firstmjd",
     "lastmjd",
     "step_id_corr",
+    "diffpos",
+    "reference_change",
 ]
 non_col = ["objectId", "mjd", "fid", "diffmaglim"]
 ss_col = ["objectId", "candid", "ssdistnr", "ssmagnr", "ssnamenr"]
