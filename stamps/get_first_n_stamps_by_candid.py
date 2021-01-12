@@ -15,7 +15,7 @@ import pandas as pd
     help="log level to use",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
-def get_stamps_by_oid(input_path, output_path, candids_file_path, loglevel):
+def get_stamps_by_candid(input_path, output_path, candids_file_path, loglevel):
     """
     Get first n-stamps given a list of oids
 
@@ -68,5 +68,5 @@ def get_stamps_by_oid(input_path, output_path, candids_file_path, loglevel):
 
 
 if __name__ == "__main__":
-    get_stamps_by_oid()
+    get_stamps_by_candid()
 
