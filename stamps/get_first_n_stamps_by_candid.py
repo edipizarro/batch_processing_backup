@@ -43,12 +43,13 @@ def get_stamps_by_oid(input_path, output_path, candids_file_path, loglevel):
     conf = SparkConf()
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
 
-    candid = pd.read_csv(candids_file_path)
-    candid = list(candid["candid"].values)
+    candids = pd.read_csv(candids_file_path)
+    print(candids.columns)
+    candids = list(candids["candid"].values)
 
     # read from bucket
     ztf = spark.read.format("avro").load(input_path)
-    ztf = ztf.filter(col("candid").isin(list(candid)))
+    ztf = ztf.filter(col("candid").isin(list(candids)))
 
     # select fields
     selection = ztf.select(
