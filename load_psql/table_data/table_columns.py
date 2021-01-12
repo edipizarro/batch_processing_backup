@@ -118,6 +118,7 @@ mag_col = [
     "first_mjd",
     "last_mjd",
     "step_id_corr",
+    "saturation_rate",
 ]
 ps1_col = [
     "objectId",
