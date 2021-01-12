@@ -41,7 +41,9 @@ class ReferenceTableData(TableData):
             .where(col("candid") == col("auxcandid"))
             .select(
                 *[
-                    col(c).cast(IntegerType()) if c in ["rfid", "candid"] else col(c)
+                    col(c).cast(IntegerType())
+                    if c in ["rfid", "candid", "nframesref"]
+                    else col(c)
                     for c in column_list
                 ]
             )
