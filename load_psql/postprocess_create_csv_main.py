@@ -55,7 +55,7 @@ def validate_config(config):
         "detection",
         "non_detection",
         "object",
-        "magstats",
+        "magstat",
         "ps1_ztf",
         "gaia_ztf",
         "ss_ztf",
@@ -91,22 +91,6 @@ def validate_config(config):
     return True, None
 
 
-def loader_save_and_upload(
-    Loader, table_name, config, session, default_args, column_list, **kwargs
-):
-    loader = Loader(source=config["sources"][table_name], read_args=default_args)
-    loader.save_csv(
-        spark_session=session,
-        output_path=config["outputs"][table_name],
-        n_partitions=config["csv_loader_config"]["n_partitions"],
-        max_records_per_file=config["csv_loader_config"]["max_records_per_file"],
-        mode=config["csv_loader_config"]["mode"],
-        column_list=column_list,
-        **kwargs,
-    )
-    loader.psql_load_csv(config["outputs"][table_name], config["db"], table_name)
-
-
 def loader_create_csv(
     Loader, table_name, config, session, default_args, column_list, **kwargs
 ):
@@ -122,11 +106,11 @@ def loader_create_csv(
     )
 
 
-def loader_load_csv(Loader, table_name, config, session, default_args, **kwargs):
+def loader_load_csv(Loader, table_name, config):
     Loader.psql_load_csv(config["outputs"][table_name], config["db"], table_name)
 
 
-def get_config(path: str) -> dict:
+def get_config_from_file(path: str) -> dict:
     if not os.path.exists(path):
         raise Exception("Config file not found")
     with open(path) as f:
@@ -134,8 +118,21 @@ def get_config(path: str) -> dict:
         return data["load_psql_config"]
 
 
+def get_config_from_str(config: str) -> dict:
+    data = json.loads(config)
+    return data["load_psql_config"]
+
+
 @click.command()
-@click.argument("config_file")
+@click.option(
+    "--config_file",
+    "config_file",
+    help="use a json file for configuration",
+    type=str,
+)
+@click.option(
+    "--config_json", "config_json", help="use a json string for configuration", type=str
+)
 @click.option(
     "--log",
     "loglevel",
@@ -143,29 +140,24 @@ def get_config(path: str) -> dict:
     help="log level to use",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
-@click.option(
-    "--spark.driver.memory",
-    "spark_driver_memory",
-    help="spark.driver.memory config, for example: 10g",
-    type=str,
-)
-@click.option(
-    "--spark.local.dir",
-    "spark_local_dir",
-    help="spark.local.dir config",
-    type=str,
-)
-def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=None):
+def process_csv(
+    config_file, config_json, loglevel, spark_driver_memory=None, spark_local_dir=None
+):
     """
-    Creates and uploads CSV files from source parquet to a PSQL database. The following arguments are required:
+    Creates and uploads CSV files from source parquet to a PSQL database.
 
-    CONFIG_FILE: The path to a valid config.py file
+
     """
-    config = get_config(config_file)
+    if config_file:
+        config = get_config_from_file(config_file)
+    elif config_json:
+        config = get_config_from_str(config_json)
+    else:
+        raise Exception("Provide at least one source for configuration")
     valid, message = validate_config(config)
     if not valid:
         raise Exception(message)
-    spark = create_session(spark_driver_memory, spark_local_dir)
+    spark = create_session(config["spark.driver.memory"], config["spark.local.dir"])
     default_args = {}
     tt_det = get_tt_det(
         spark, config["sources"]["detection"], config["sources"]["raw_detection"]
@@ -173,7 +165,7 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
     step_id = "bulk_1.0.0"
     obj_cid_window = Window.partitionBy("objectId").orderBy("candid")
     if config["tables"]["detection"]:
-        loader_save_and_upload(
+        loader_create_csv(
             DetectionsCSVLoader,
             "detection",
             config,
@@ -183,12 +175,14 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
             tt_det=tt_det,
             step_id=step_id,
         )
+        loader_load_csv(DetectionsCSVLoader, "detection", config)
     if config["tables"]["object"]:
-        loader_save_and_upload(
+        loader_create_csv(
             ObjectsCSVLoader, "object", config, spark, default_args, obj_col.copy()
         )
+        loader_load_csv(ObjectsCSVLoader, "object", config)
     if config["tables"]["non_detection"]:
-        loader_save_and_upload(
+        loader_create_csv(
             NonDetectionsCSVLoader,
             "non_detection",
             config,
@@ -196,8 +190,9 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
             default_args,
             non_col.copy(),
         )
+        loader_load_csv(NonDetectionsCSVLoader, "non_detection", config)
     if config["tables"]["ss_ztf"]:
-        loader_save_and_upload(
+        loader_create_csv(
             SSCSVLoader,
             "ss_ztf",
             config,
@@ -207,13 +202,15 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
             tt_det=tt_det,
             obj_cid_window=obj_cid_window,
         )
+        loader_load_csv(SSCSVLoader, "ss_ztf", config)
 
-    if config["tables"]["magstats"]:
-        loader_save_and_upload(
-            MagstatsCSVLoader, "magstats", config, spark, default_args, mag_col.copy()
+    if config["tables"]["magstat"]:
+        loader_create_csv(
+            MagstatsCSVLoader, "magstat", config, spark, default_args, mag_col.copy()
         )
+        loader_load_csv(MagstatsCSVLoader, "magstat", config)
     if config["tables"]["ps1_ztf"]:
-        loader_save_and_upload(
+        loader_create_csv(
             PS1CSVLoader,
             "ps1_ztf",
             config,
@@ -222,9 +219,10 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
             ps1_col.copy(),
             obj_cid_window=obj_cid_window,
         )
+        loader_load_csv(PS1CSVLoader, "ps1_ztf", config)
     if config["tables"]["gaia_ztf"]:
-        loader_save_and_upload(
-            PS1CSVLoader,
+        loader_create_csv(
+            GaiaCSVLoader,
             "gaia_ztf",
             config,
             spark,
@@ -232,8 +230,9 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
             gaia_col.copy(),
             obj_cid_window=obj_cid_window,
         )
+        loader_load_csv(GaiaCSVLoader, "gaia_ztf", config)
     if config["tables"]["reference"]:
-        loader_save_and_upload(
+        loader_create_csv(
             ReferenceCSVLoader,
             "reference",
             config,
@@ -242,9 +241,10 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
             ref_col.copy(),
             tt_det=tt_det,
         )
+        loader_load_csv(ReferenceCSVLoader, "reference", config)
 
     if config["tables"]["dataquality"]:
-        loader_save_and_upload(
+        loader_create_csv(
             DataQualityCSVLoader,
             "dataquality",
             config,
@@ -253,6 +253,7 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
             qua_col.copy(),
             tt_det=tt_det,
         )
+        loader_load_csv(DataQualityCSVLoader, "dataquality", config)
     if config["tables"]["xmatch"]:
         pass
     if config["tables"]["probability"]:
@@ -262,7 +263,15 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
 
 
 @click.command()
-@click.argument("config_file")
+@click.option(
+    "--config_file",
+    "config_file",
+    help="use a json file for configuration",
+    type=str,
+)
+@click.option(
+    "--config_json", "config_json", help="use a json string for configuration", type=str
+)
 @click.option(
     "--log",
     "loglevel",
@@ -270,25 +279,20 @@ def process_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir
     help="log level to use",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
-@click.option(
-    "--spark.driver.memory",
-    "spark_driver_memory",
-    help="spark.driver.memory config, for example: 10g",
-    type=str,
-)
-@click.option(
-    "--spark.local.dir",
-    "spark_local_dir",
-    help="spark.local.dir config",
-    type=str,
-)
-def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=None):
+def create_csv(
+    config_file, config_json, loglevel, spark_driver_memory=None, spark_local_dir=None
+):
     """
-    Creates CSV files from source parquet. The following arguments are required:
+    Creates CSV files from source parquet.
 
-    CONFIG_FILE: The path to a valid config.py file
+
     """
-    config = get_config(config_file)
+    if config_file:
+        config = get_config_from_file(config_file)
+    elif config_json:
+        config = get_config_from_str(config_json)
+    else:
+        raise Exception("Provide at least one source for configuration")
     valid, message = validate_config(config)
     if not valid:
         raise Exception(message)
@@ -335,9 +339,9 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
             obj_cid_window=obj_cid_window,
         )
 
-    if config["tables"]["magstats"]:
+    if config["tables"]["magstat"]:
         loader_create_csv(
-            MagstatsCSVLoader, "magstats", config, spark, default_args, mag_col.copy()
+            MagstatsCSVLoader, "magstat", config, spark, default_args, mag_col.copy()
         )
     if config["tables"]["ps1_ztf"]:
         loader_create_csv(
@@ -391,7 +395,15 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
 
 
 @click.command()
-@click.argument("config_file")
+@click.option(
+    "--config_file",
+    "config_file",
+    help="use a json file for configuration",
+    type=str,
+)
+@click.option(
+    "--config_json", "config_json", help="use a json string for configuration", type=str
+)
 @click.option(
     "--log",
     "loglevel",
@@ -399,27 +411,18 @@ def create_csv(config_file, loglevel, spark_driver_memory=None, spark_local_dir=
     help="log level to use",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
-@click.option(
-    "--spark.driver.memory",
-    "spark_driver_memory",
-    help="spark.driver.memory config, for example: 10g",
-    type=str,
-)
-@click.option(
-    "--spark.local.dir",
-    "spark_local_dir",
-    help="spark.local.dir config",
-    type=str,
-)
 def psql_copy_csv(
-    config_file, loglevel, spark_driver_memory=None, spark_local_dir=None
+    config_file, config_json, loglevel, spark_driver_memory=None, spark_local_dir=None
 ):
     """
-    Uploads CSV files to a PSQL database. The following arguments are required:
-
-    CONFIG_FILE: The path to a valid config.py file
+    Uploads CSV files to a PSQL database.
     """
-    config = get_config(config_file)
+    if config_file:
+        config = get_config_from_file(config_file)
+    elif config_json:
+        config = get_config_from_str(config_json)
+    else:
+        raise Exception("Provide at least one source for configuration")
 
     valid, message = validate_config(config)
     if not valid:
@@ -427,79 +430,24 @@ def psql_copy_csv(
     default_args = {}
 
     if config["tables"]["detection"]:
-        loader_load_csv(
-            DetectionsCSVLoader,
-            "detection",
-            config,
-            None,
-            default_args,
-        )
+        loader_load_csv(DetectionsCSVLoader, "detection", config)
     if config["tables"]["object"]:
-        loader_load_csv(
-            ObjectsCSVLoader,
-            "object",
-            config,
-            None,
-            default_args,
-        )
+        loader_load_csv(ObjectsCSVLoader, "object", config)
     if config["tables"]["non_detection"]:
-        loader_load_csv(
-            NonDetectionsCSVLoader,
-            "non_detection",
-            config,
-            None,
-            default_args,
-        )
+        loader_load_csv(NonDetectionsCSVLoader, "non_detection", config)
     if config["tables"]["ss_ztf"]:
-        loader_load_csv(
-            SSCSVLoader,
-            "ss_ztf",
-            config,
-            None,
-            default_args,
-        )
+        loader_load_csv(SSCSVLoader, "ss_ztf", config)
 
-    if config["tables"]["magstats"]:
-        loader_load_csv(
-            MagstatsCSVLoader,
-            "magstats",
-            config,
-            None,
-            default_args,
-        )
+    if config["tables"]["magstat"]:
+        loader_load_csv(MagstatsCSVLoader, "magstat", config)
     if config["tables"]["ps1_ztf"]:
-        loader_load_csv(
-            PS1CSVLoader,
-            "ps1_ztf",
-            config,
-            None,
-            default_args,
-        )
+        loader_load_csv(PS1CSVLoader, "ps1_ztf", config)
     if config["tables"]["gaia_ztf"]:
-        loader_load_csv(
-            PS1CSVLoader,
-            "gaia_ztf",
-            config,
-            None,
-            default_args,
-        )
+        loader_load_csv(GaiaCSVLoader, "gaia_ztf", config)
     if config["tables"]["reference"]:
-        loader_load_csv(
-            ReferenceCSVLoader,
-            "reference",
-            config,
-            None,
-            default_args,
-        )
-
+        loader_load_csv(ReferenceCSVLoader, "reference", config)
     if config["tables"]["dataquality"]:
-        loader_load_csv(
-            DataQualityCSVLoader,
-            "dataquality",
-            config,
-            None,
-            default_args,
-        )
+        loader_load_csv(DataQualityCSVLoader, "dataquality", config)
     if config["tables"]["xmatch"]:
         pass
     if config["tables"]["probability"]:
