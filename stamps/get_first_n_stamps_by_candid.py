@@ -45,6 +45,7 @@ def get_stamps_by_candid(input_path, output_path, candids_file_path, loglevel):
 
     candids = pd.read_csv(candids_file_path)
     candids = candids["candid"].values.astype(int)
+    candids = [int(x) for x in candids]
 
     # read from bucket
     ztf = spark.read.format("avro").load(input_path)
