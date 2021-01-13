@@ -39,7 +39,7 @@ class ReferenceTableData(TableData):
             .withColumnRenamed("i.jdstartref", "mjdstartref")
             .withColumnRenamed("i.jdendref", "mjdendref")
             .where(col("candid") == col("auxcandid"))
-            .fillna({"rfid", -9999})
+            .fillna({"rfid": -9999})
             .select(
                 *[
                     col(c).cast(IntegerType())
