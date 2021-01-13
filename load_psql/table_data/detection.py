@@ -1,17 +1,5 @@
 from load_psql.table_data import TableData
 from pyspark.sql import DataFrame, DataFrameReader, SparkSession
-from .table_columns import (
-    det_col,
-    obj_col,
-    non_col,
-    ss_col,
-    qua_col,
-    mag_col,
-    ps1_col,
-    gaia_col,
-    ref_col,
-    xch_col,
-)
 from pyspark.sql.functions import (
     col,
     lit,
@@ -20,14 +8,14 @@ from pyspark.sql.types import IntegerType
 
 
 class DetectionTableData(TableData):
-    def select(self, tt_det: DataFrame, step_id: str) -> DataFrame:
+    def select(self, column_list: list, tt_det: DataFrame, step_id: str) -> DataFrame:
         data_det = (
             tt_det.select(
                 "i.aimage",
                 "i.aimagerat",
                 "i.bimage",
                 "i.bimagerat",
-                "i.candid",
+                tt_det["i.candid"].cast(IntegerType()),
                 "i.chinr",
                 "i.chipsf",
                 "i.classtar",
@@ -69,7 +57,7 @@ class DetectionTableData(TableData):
                 "i.objectidps1",
                 "i.objectidps2",
                 "i.objectidps3",
-                "i.parent_candid",
+                tt_det["i.parent_candid"].cast(IntegerType()),
                 "i.pdiffimfilename",
                 "i.pid",
                 "i.programid",
@@ -78,7 +66,7 @@ class DetectionTableData(TableData):
                 "i.ranr",
                 "i.rb",
                 "i.rcid",
-                "i.rfid",
+                tt_det["i.rfid"].cast(IntegerType()),
                 "i.scorr",
                 "i.seeratio",
                 "i.sgmag1",
@@ -123,12 +111,5 @@ class DetectionTableData(TableData):
         data_det = data_det.fillna("", "rbversion")
         data_det = data_det.fillna("", "drbversion")
 
-        sel_det = data_det.select(*[col(c) for c in det_col])
+        sel_det = data_det.select(*[col(c) for c in column_list])
         return sel_det
-
-    def save(self, output_dir, n_partitions, max_records_per_file, mode, selected=None, *args, **kwargs):
-        # logging.info("Writing detections")
-        sel_det = selected or self.dataframe
-        sel_det.coalesce(n_partitions).write.option(
-            "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir, emptyValue="")

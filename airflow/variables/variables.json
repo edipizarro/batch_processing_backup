@@ -1,0 +1,71 @@
+{
+  "partition_dets_ndets_config": {
+    "source_avro": "",
+    "output_detections": "",
+    "output_non_detections": "",
+    "bootstrap_actions_script": "",
+    "master_instance_type": "",
+    "master_instance_count": "",
+    "core_instance_type": "",
+    "core_instance_count": ""
+  },
+  "load_psql_config": {
+    "spark.driver.memory": "",
+    "spark.local.dir": "",
+    "db": {
+      "dbname": "",
+      "user": "",
+      "password": "",
+      "host": "",
+      "port": ""
+    },
+    "tables": {
+      "detection": true,
+      "non_detection": true,
+      "object": true,
+      "magstats": true,
+      "ps1_ztf": true,
+      "ss_ztf": true,
+      "reference": true,
+      "dataquality": true,
+      "xmatch": false,
+      "probability": false,
+      "feature": false,
+      "gaia_ztf": true
+    },
+    "sources": {
+      "raw_detection": "s3a://ztf-historic-data/20210106/detections/",
+      "detection": "s3a://ztf-historic-data/20210106/corrected_detections/",
+      "non_detection": "s3a://ztf-historic-data/20210106/non_detections/",
+      "object": "s3a://ztf-historic-data/20210106/object/",
+      "magstats": "s3a://ztf-historic-data/20210106/magstat/",
+      "ps1_ztf": "s3a://ztf-historic-data/20210106/corrected_detections/",
+      "ss_ztf": "",
+      "reference": "",
+      "dataquality": "",
+      "gaia_ztf": "",
+      "xmatch": "",
+      "probability": "",
+      "feature": ""
+    },
+    "outputs": {
+      "detection": "/home/diego/20210106/detection",
+      "non_detection": "/home/diego/20210106/non-detection",
+      "object": "/home/diego/20210106/object",
+      "magstats": "/home/diego/20210106/magstats",
+      "ps1_ztf": "/home/diego/20210106/ps1_ztf",
+      "ss_ztf": "/home/diego/20210106/ss_ztf",
+      "reference": "/home/diego/20210106/reference",
+      "dataquality": "/home/diego/20210106/dataquality",
+      "xmatch": "",
+      "probability": "",
+      "feature": "",
+      "gaia_ztf": "/home/diego/20210106/gaia_ztf"
+    },
+    "csv_loader_config": {
+      "n_partitions": 16,
+      "max_records_per_file": 100000,
+      "mode": "overwrite"
+    }
+  }
+}
