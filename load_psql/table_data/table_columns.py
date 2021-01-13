@@ -174,7 +174,14 @@ ref_col = [
 ]
 
 
-xch_col = [
+xmatch_col = [
+    "objectId_2",
+    "catid",
+    "designation",
+    "distance"
+]
+
+allwise_col = [
     "designation",
     "ra",
     "dec",
@@ -192,5 +199,4 @@ xch_col = [
     "j_msig_2mass",
     "h_msig_2mass",
     "k_msig_2mass",
-    "objectId_2",
 ]
