@@ -157,7 +157,9 @@ def process_csv(
     valid, message = validate_config(config)
     if not valid:
         raise Exception(message)
-    spark = create_session(config["spark.driver.memory"], config["spark.local.dir"])
+    spark_driver_memory = config.get("spark.driver.memory", None)
+    spark_local_dir = config.get("spark.local.dir", None)
+    spark = create_session(spark_driver_memory, spark_local_dir)
     default_args = {}
     tt_det = get_tt_det(
         spark, config["sources"]["detection"], config["sources"]["raw_detection"]
@@ -279,9 +281,7 @@ def process_csv(
     help="log level to use",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
-def create_csv(
-    config_file, config_json, loglevel, spark_driver_memory=None, spark_local_dir=None
-):
+def create_csv(config_file, config_json, loglevel):
     """
     Creates CSV files from source parquet.
 
@@ -296,6 +296,8 @@ def create_csv(
     valid, message = validate_config(config)
     if not valid:
         raise Exception(message)
+    spark_driver_memory = config.get("spark.driver.memory", None)
+    spark_local_dir = config.get("spark.local.dir", None)
     spark = create_session(spark_driver_memory, spark_local_dir)
     default_args = {}
     tt_det = get_tt_det(
