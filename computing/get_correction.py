@@ -68,7 +68,7 @@ def get_correction(
     del detections["jd"]
 
     logging.info("Grouping objects and doing correction")
-    correction_df = detections.groupby(["objectId", "fid"]).apply(apply_correction_df)
+    correction_df = detections.groupby(["objectId", "fid"]).apply(apply_correction_df, calculate_dubious=True)
     correction_df.reset_index(inplace=True)
     del detections
 

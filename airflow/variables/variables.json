@@ -31,7 +31,8 @@
       "xmatch": false,
       "probability": false,
       "feature": false,
-      "gaia_ztf": false
+      "gaia_ztf": true,
+      "allwise": false
     },
     "sources": {
       "raw_detection": "",
