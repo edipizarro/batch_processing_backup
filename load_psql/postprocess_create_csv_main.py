@@ -8,6 +8,8 @@ from load_psql.loaders import (
     ReferenceCSVLoader,
     GaiaCSVLoader,
     DataQualityCSVLoader,
+    XmatchCSVLoader,
+    AllwiseCSVLoader
 )
 from load_psql.table_data.table_columns import (
     det_col,
@@ -19,6 +21,8 @@ from load_psql.table_data.table_columns import (
     ss_col,
     gaia_col,
     ref_col,
+    xmatch_col,
+    allwise_col
 )
 
 from pyspark.sql import SparkSession, Window
@@ -257,7 +261,27 @@ def process_csv(
         )
         loader_load_csv(DataQualityCSVLoader, "dataquality", config)
     if config["tables"]["xmatch"]:
-        pass
+        loader_create_csv(
+            XmatchCSVLoader,
+            "xmatch",
+            config,
+            spark,
+            default_args,
+            xmatch_col.copy()
+        )
+        loader_load_csv(XmatchCSVLoader, "xmatch", config)
+
+    if config["tables"]["allwise"]:
+        loader_create_csv(
+            AllwiseCSVLoader,
+            "allwise",
+            config,
+            spark,
+            default_args,
+            allwise_col.copy()
+        )
+        loader_load_csv(AllwiseCSVLoader, "allwise", config)
+
     if config["tables"]["probability"]:
         pass
     if config["tables"]["feature"]:
@@ -389,7 +413,25 @@ def create_csv(config_file, config_json, loglevel):
             tt_det=tt_det,
         )
     if config["tables"]["xmatch"]:
-        pass
+        loader_create_csv(
+            XmatchCSVLoader,
+            "xmatch",
+            config,
+            spark,
+            default_args,
+            xmatch_col.copy()
+        )
+
+    if config["tables"]["allwise"]:
+        loader_create_csv(
+            AllwiseCSVLoader,
+            "allwise",
+            config,
+            spark,
+            default_args,
+            allwise_col.copy()
+        )
+
     if config["tables"]["probability"]:
         pass
     if config["tables"]["feature"]:
@@ -451,7 +493,9 @@ def psql_copy_csv(
     if config["tables"]["dataquality"]:
         loader_load_csv(DataQualityCSVLoader, "dataquality", config)
     if config["tables"]["xmatch"]:
-        pass
+        loader_load_csv(XmatchCSVLoader, "xmatch", config)
+    if config["tables"]["allwise"]:
+        loader_load_csv(AllwiseCSVLoader, "allwise", config)
     if config["tables"]["probability"]:
         pass
     if config["tables"]["feature"]:

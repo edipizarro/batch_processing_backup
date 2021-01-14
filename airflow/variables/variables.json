@@ -31,7 +31,8 @@
       "xmatch": false,
       "probability": false,
       "feature": false,
-      "gaia_ztf": true
+      "gaia_ztf": true,
+      "allwise": false
     },
     "sources": {
       "raw_detection": "s3a://ztf-historic-data/20210106/detections/",
