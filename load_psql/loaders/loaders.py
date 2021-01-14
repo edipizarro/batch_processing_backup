@@ -60,11 +60,7 @@ class CSVLoader(ABC):
             max_records_per_file=max_records_per_file,
             mode=mode,
         )
-
-<<<<<<< HEAD
-
-=======
->>>>>>> feature/load_psql
+        
     @classmethod
     def psql_load_csv(cls, csv_path: str, config: dict, table_name: str) -> None:
         names = glob.glob(csv_path + "/*")

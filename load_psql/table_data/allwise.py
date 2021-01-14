@@ -10,9 +10,3 @@ class AllwiseTableData(TableData):
         ).withColumnRenamed("designation","oid_catalog")
 
         return sel_allwise
-
-    def save(self, output_dir, n_partitions, max_records_per_file, mode, selected=None):
-        sel_allwise = selected or self.dataframe
-        sel_allwise.coalesce(n_partitions).write.option(
-            "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir, emptyValue="")
