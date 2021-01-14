@@ -1,49 +1,61 @@
-version: '3.8'
+version: "3.8"
 services:
-    postgres:
-        image: postgres
-        environment:
-            - POSTGRES_USER=airflow
-            - POSTGRES_PASSWORD=airflow
-            - POSTGRES_DB=airflow
-    scheduler:
-        build:
-          context: .
-        entrypoint: ./scripts/entrypoint_scheduler.sh
-        depends_on:
-            - postgres
-        environment:
-            - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://<user>:<password>@postgres/<db>
-            - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-            - AIRFLOW_CONN_AWS_DEFAULT=aws://<aws_access_key>:<aws_secret_access_key>@
-            - AWS_DEFAULT_REGION=<region-name>
-        volumes:
-            - ./dags:/opt/airflow/dags
-            - ./logs:/opt/airflow/logs
-            - ./scripts:/opt/airflow/scripts
-    webserver:
-        build:
-          context: .
-        entrypoint: ./scripts/entrypoint_webserver.sh
-        depends_on:
-            - postgres
-            - scheduler
-        environment:
-            - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://<user>:<password>@postgres/<db>
-            - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-            - AIRFLOW_CONN_AWS_DEFAULT=aws://<aws_access_key>:<aws_secret_access_key>@
-            - AWS_DEFAULT_REGION=<region-name>
-            - partition_det_ndet_source_avro=
-            - partition_det_ndet_output_detections=
-            - partition_det_ndet_output_non_detections=
-            - partition_det_ndet_bootstrap_actions_script=
-            - partition_det_ndet_master_instance_type=m5.xlarge
-            - partition_det_ndet_master_instance_count=1
-            - partition_det_ndet_core_instance_type=m5.4xlarge
-            - partition_det_ndet_core_instance_count=1
-        volumes:
-            - ./dags:/opt/airflow/dags
-            - ./logs:/opt/airflow/logs
-            - ./scripts:/opt/airflow/scripts
-        ports:
-            - "8080:8080"
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+
+  initdb:
+    build:
+      context: .
+    entrypoint: ./scripts/entrypoint_initdb.sh
+    depends_on:
+      - postgres
+    environment:
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+    volumes:
+      - ./logs:/opt/airflow/logs
+      - ./scripts:/opt/airflow/scripts
+
+  webserver:
+    build:
+      context: .
+    entrypoint: ./scripts/entrypoint_webserver.sh
+    depends_on:
+      - initdb
+    environment:
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__FERNET_KEY=your_fernet_key
+      - AIRFLOW__CORE__ENABLE_XCOM_PICKLING=True
+      - AIRFLOW_CONN_AWS_DEFAULT=aws://acess_key_id:secret_access_key@
+      - AWS_DEFAULT_REGION=us-east-1
+      - ADMIN_USER=admin
+      - ADMIN_PASSWORD=admin
+    volumes:
+      - ./logs:/opt/airflow/logs
+      - ./scripts:/opt/airflow/scripts
+      - ./variables:/opt/airflow/variables
+    ports:
+      - "8080:8080"
+
+  scheduler:
+    build:
+      context: .
+    entrypoint: ./scripts/entrypoint_scheduler.sh
+    depends_on:
+      - webserver
+    environment:
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__FERNET_KEY=your_fernet_key
+      - AIRFLOW__CORE__ENABLE_XCOM_PICKLING=True
+      - AIRFLOW_CONN_AWS_DEFAULT=aws://acess_key_id:secret_access_key@
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./scripts:/opt/airflow/scripts

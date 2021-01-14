@@ -51,6 +51,8 @@ obj_col = [
     "firstmjd",
     "lastmjd",
     "step_id_corr",
+    "diffpos",
+    "reference_change",
 ]
 non_col = ["objectId", "mjd", "fid", "diffmaglim"]
 ss_col = ["objectId", "candid", "ssdistnr", "ssmagnr", "ssnamenr"]
@@ -116,6 +118,7 @@ mag_col = [
     "first_mjd",
     "last_mjd",
     "step_id_corr",
+    "saturation_rate",
 ]
 ps1_col = [
     "objectId",
@@ -168,13 +171,20 @@ ref_col = [
     "sharpnr",
     "ranr",
     "decnr",
-    "jdstartref",
-    "jdendref",
+    "mjdstartref",
+    "mjdendref",
     "nframesref",
 ]
 
 
-xch_col = [
+xmatch_col = [
+    "objectId_2",
+    "catid",
+    "designation",
+    "distance"
+]
+
+allwise_col = [
     "designation",
     "ra",
     "dec",
@@ -192,5 +202,4 @@ xch_col = [
     "j_msig_2mass",
     "h_msig_2mass",
     "k_msig_2mass",
-    "objectId_2",
 ]
