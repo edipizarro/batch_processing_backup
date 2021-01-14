@@ -10,6 +10,8 @@ from load_psql.table_data import (
     PS1TableData,
     GaiaTableData,
     ReferenceTableData,
+    AllwiseTableData,
+    XmatchTableData
 )
 from pyspark.sql import SparkSession, DataFrame
 import glob
@@ -58,7 +60,7 @@ class CSVLoader(ABC):
             max_records_per_file=max_records_per_file,
             mode=mode,
         )
-
+        
     @classmethod
     def psql_load_csv(cls, csv_path: str, config: dict, table_name: str) -> None:
         names = glob.glob(csv_path + "/*")
@@ -127,3 +129,16 @@ class ReferenceCSVLoader(CSVLoader):
         self, spark_session: SparkSession, source: str, read_args: dict
     ):
         return ReferenceTableData(spark_session, source, read_args)
+
+
+class AllwiseCSVLoader(CSVLoader):
+    def create_table_data(
+        self, spark_session: SparkSession, source: str, read_args: dict
+    ):
+        return AllwiseTableData(spark_session, source, read_args)
+
+class XmatchCSVLoader(CSVLoader):
+    def create_table_data(
+        self, spark_session: SparkSession, source: str, read_args: dict
+    ):
+        return XmatchTableData(spark_session, source, read_args)
