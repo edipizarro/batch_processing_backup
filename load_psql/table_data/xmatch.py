@@ -15,9 +15,3 @@ class XmatchTableData(TableData):
         .withColumn("step_id_corr", lit("allwise"))
 
         return sel_allwise
-
-    def save(self, output_dir, n_partitions, max_records_per_file, mode, selected=None):
-        sel_xmatch = selected or self.dataframe
-        sel_xmatch.coalesce(n_partitions).write.option(
-            "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir, emptyValue="")
