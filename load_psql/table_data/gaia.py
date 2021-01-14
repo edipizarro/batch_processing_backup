@@ -1,30 +1,30 @@
 from .generic import TableData
-from .table_columns import gaia_col
 from pyspark.sql.functions import col, countDistinct
+from pyspark.sql.functions import min as spark_min
+from pyspark.sql.functions import abs as spark_abs
+from pyspark.sql.types import IntegerType
 
 
 class GaiaTableData(TableData):
-    def apply_fun(self, fun, column):
-        return fun(column)
-
     def compare_threshold(self, val, threshold):
         return val > threshold
 
-    def select(self, tt_det, obj_cid_window, real_threshold=1e-4):
-        gaia_col.remove("objectId")
-        gaia_col.remove("candid")
-        gaia_col.remove("unique1")
+    def select(self, column_list, tt_det, obj_cid_window, real_threshold=1e-4):
+        column_list.remove("objectId")
+        column_list.remove("candid")
+        column_list.remove("unique1")
 
         tt_gaia = tt_det.select(
-            "objectId", "candid", *[col("c." + c).alias(c) for c in gaia_col]
+            "objectId", "candid", *[col("c." + c).alias(c) for c in column_list]
         )
 
         tt_gaia_min = (
             tt_gaia.withColumn(
-                "mincandid", self.apply_fun(min, col("candid")).over(obj_cid_window)
+                "mincandid",
+                spark_min(col("candid")).over(obj_cid_window),
             )
             .where(col("candid") == col("mincandid"))
-            .select("objectId", "candid", *gaia_col)
+            .select("objectId", "candid", *column_list)
         )
 
         data_gaia = (
@@ -34,12 +34,12 @@ class GaiaTableData(TableData):
                 "objectId",
                 "i.candid",
                 col("i.maggaia").alias("min_maggaia"),
-                *[col("i." + c).alias(c) for c in gaia_col]
+                *[col("i." + c).alias(c) for c in column_list]
             )
             .withColumn(
                 "unique1",
                 self.compare_threshold(
-                    self.apply_fun(abs, col("min_maggaia") - col("maggaia")),
+                    spark_abs(col("min_maggaia") - col("maggaia")),
                     real_threshold,
                 ),
             )
@@ -47,16 +47,10 @@ class GaiaTableData(TableData):
         )
 
         gr_gaia = (
-            data_gaia.groupBy("objectId", "candid", *gaia_col)
+            data_gaia.groupBy("objectId", "candid", *column_list)
             .agg(countDistinct("unique1").alias("count1"))
             .withColumn("unique1", col("count1") != 1)
             .drop("count1")
         )
 
         return gr_gaia
-
-    def save(self, output_dir, n_partitions, max_records_per_file, mode, selected=None):
-        sel_ref = selected or self.dataframe
-        sel_ref.coalesce(n_partitions).write.option(
-            "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir, emptyValue="")

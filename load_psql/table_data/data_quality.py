@@ -1,21 +1,16 @@
 from .generic import TableData
 from pyspark.sql.functions import col
-from .table_columns import qua_col
+from pyspark.sql.types import IntegerType
 
 
 class DataQualityTableData(TableData):
-    def select(self, tt_det):
+    def select(self, column_list, tt_det):
         # logging.info("Processing dataquality")
-        qua_col.remove("objectId")
-        qua_col.remove("candid")
+        column_list.remove("objectId")
+        column_list.remove("candid")
         tt_qua = tt_det.select(
-            "objectId", "candid", *[col("c." + c).alias(c) for c in qua_col]
+            "objectId",
+            tt_det["candid"].cast(IntegerType()),
+            *[col("c." + c).alias(c) for c in column_list]
         )
         return tt_qua
-
-    def save(self, output_dir, n_partitions, max_records_per_file, mode, selected=None):
-        # logging.info("Writing dataquality")
-        tt_qua = selected or self.dataframe
-        tt_qua.coalesce(n_partitions).write.option(
-            "maxRecordsPerFile", max_records_per_file
-        ).mode(mode).csv(output_dir, emptyValue="")
