@@ -8,8 +8,8 @@ Batch processing of ALeRCE ZTF historic data has three phases.
 
 The three stages are executed separately but a more automated pipeline is being developed using Apache Airflow. So far the first step is run with apache airflow wich makes it easy to create the ECR cluster and execute the task of partition. Eventually al stages will be run with Airflow.
 
-
 ## Phase 1: Partition data
+
 The first step takes raw avro files stored in S3 and creates `n` parquet files where `n` is the number of partitions. This process is executed in an Amazon EMR cluster and can be launched with the Airflow web server.
 
 ### Configuration
@@ -21,6 +21,7 @@ The first step takes raw avro files stored in S3 and creates `n` parquet files w
 ## Phase 3: Copy data to database
 
 ## The Batch Processing Package
+
 Every step of the batch processing flow is integrated in a CLI that has a short description for each command and its parameters.
 
 The CLI is accesed through the `main.py` script. Execute `python main.py --help` to get preview of the available commands. `python main.py COMMAND --help` shows the same but with the available options for that specific command.
@@ -28,6 +29,7 @@ The CLI is accesed through the `main.py` script. Execute `python main.py --help`
 ### Package structure
 
 #### partition_avro
+
 Contains the script `partition-dets-ndets` that executes the partition of raw files.
 Partititon detection and non detections into parquet files. The following arguments can be passed:
 
@@ -39,20 +41,22 @@ Partititon detection and non detections into parquet files. The following argume
 
 In this script also lies the ztf avro schema used to open the raw avro files.
 
-#### computing 
+#### computing
+
 Contains the `slurm` scripts for executing tasks in `Leftraru` and the scripts for performing light curve correction, feature computation, etc.
 
 #### load_psql
+
 The load_psql module contains the `postprocess_create_csv.py` script that adds three commands to the main CLI.
 
 - `process-csv`: creates csv files from the pre-computed results in parquet and copies the csv files to a PSQL database.
-  Arguments: 
+  Arguments:
   - CONFIG_FILE: a path to a valid config.py file
 - `create-csv`: creates csv files from the pre-computed results in parquet.
-    Arguments: 
+  Arguments:
   - CONFIG_FILE: a path to a valid config.py file
 - `psql-copy-csv`: uploads csv file to PSQL database
-    Arguments: 
+  Arguments:
   - CONFIG_FILE: a path to a valid config.py file
 
 #### airflow
