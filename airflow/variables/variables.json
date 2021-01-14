@@ -1,0 +1,72 @@
+{
+  "partition_dets_ndets_config": {
+    "source_avro": "",
+    "output_detections": "",
+    "output_non_detections": "",
+    "bootstrap_actions_script": "",
+    "master_instance_type": "",
+    "master_instance_count": 1,
+    "core_instance_type": "",
+    "core_instance_count": 1
+  },
+  "load_psql_config": {
+    "spark.driver.memory": "",
+    "spark.local.dir": "",
+    "db": {
+      "dbname": "",
+      "user": "",
+      "password": "",
+      "host": "",
+      "port": ""
+    },
+    "tables": {
+      "detection": true,
+      "non_detection": false,
+      "object": false,
+      "magstats": false,
+      "ps1_ztf": false,
+      "ss_ztf": false,
+      "reference": false,
+      "dataquality": false,
+      "xmatch": false,
+      "probability": false,
+      "feature": false,
+      "gaia_ztf": true,
+      "allwise": false
+    },
+    "sources": {
+      "raw_detection": "",
+      "detection": "",
+      "non_detection": "",
+      "object": "",
+      "magstats": "",
+      "ps1_ztf": "",
+      "ss_ztf": "",
+      "reference": "",
+      "dataquality": "",
+      "gaia_ztf": "",
+      "xmatch": "",
+      "probability": "",
+      "feature": ""
+    },
+    "outputs": {
+      "detection": "",
+      "non_detection": "",
+      "object": "",
+      "magstats": "",
+      "ps1_ztf": "",
+      "ss_ztf": "",
+      "reference": "",
+      "dataquality": "",
+      "xmatch": "",
+      "probability": "",
+      "feature": "",
+      "gaia_ztf": ""
+    },
+    "csv_loader_config": {
+      "n_partitions": 16,
+      "max_records_per_file": 100000,
+      "mode": "overwrite"
+    }
+  }
+}

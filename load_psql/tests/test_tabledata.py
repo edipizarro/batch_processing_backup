@@ -31,7 +31,7 @@ class DetectionTableDataTest(unittest.TestCase):
             fillna_mock
         )
         step_id = "step_id"
-        resp = self.table_data.select(tt_det, step_id)
+        resp = self.table_data.select([], tt_det, step_id)
         self.assertEqual(resp, "ok")
 
     def test_save(self):
@@ -57,11 +57,13 @@ class ObjectTableDataTest(unittest.TestCase):
     def test_select(self, col):
         from load_psql.table_data.table_columns import obj_col
 
+        obj_col_cpy = obj_col.copy()
+
         self.table_data.dataframe.select.return_value = "ok"
-        resp = self.table_data.select()
-        self.assertNotIn("objectId", obj_col)
-        self.assertNotIn("ndethist", obj_col)
-        self.assertNotIn("ncovhist", obj_col)
+        resp = self.table_data.select(obj_col_cpy)
+        self.assertNotIn("objectId", obj_col_cpy)
+        self.assertNotIn("ndethist", obj_col_cpy)
+        self.assertNotIn("ncovhist", obj_col_cpy)
         self.assertEqual(resp, "ok")
 
     def test_save(self):
@@ -88,7 +90,7 @@ class NonDetectionTableDataTest(unittest.TestCase):
         self.table_data.dataframe.withColumn.return_value.drop.return_value.select.return_value = (
             "ok"
         )
-        resp = self.table_data.select()
+        resp = self.table_data.select([])
         self.assertEqual(resp, "ok")
 
     def test_save(self):
@@ -112,14 +114,16 @@ class SSTableDataTest(unittest.TestCase):
 
     @mock.patch("load_psql.table_data.ss.col")
     @mock.patch("load_psql.table_data.ss.Window")
-    @mock.patch("load_psql.table_data.ss.SSTableData.get_min")
-    def test_select(self, get_min, window, col):
+    @mock.patch("load_psql.table_data.ss.spark_min")
+    def test_select(self, spark_min, window, col):
         from load_psql.table_data.table_columns import ss_col
 
+        ss_col_cpy = ss_col.copy()
+
         tt_det = mock.MagicMock()
-        ssmin, window = self.table_data.select(tt_det)
-        self.assertNotIn("objectId", ss_col)
-        self.assertNotIn("candid", ss_col)
+        ssmin = self.table_data.select(ss_col_cpy, tt_det, mock.MagicMock())
+        self.assertNotIn("objectId", ss_col_cpy)
+        self.assertNotIn("candid", ss_col_cpy)
         self.assertIsNotNone(ssmin)
         self.assertIsNotNone(window)
 
@@ -146,10 +150,12 @@ class DataQualityTableDataTest(unittest.TestCase):
     def test_select(self, col):
         from load_psql.table_data.table_columns import qua_col
 
+        qua_col_cpy = qua_col.copy()
+
         tt_det = mock.MagicMock()
-        resp = self.table_data.select(tt_det)
-        self.assertNotIn("objectId", qua_col)
-        self.assertNotIn("candid", qua_col)
+        resp = self.table_data.select(qua_col_cpy, tt_det)
+        self.assertNotIn("objectId", qua_col_cpy)
+        self.assertNotIn("candid", qua_col_cpy)
         self.assertEqual(resp, tt_det.select.return_value)
 
     def test_save(self):
@@ -174,7 +180,7 @@ class MagstatsTableDataTest(unittest.TestCase):
     @mock.patch("load_psql.table_data.magstats.col")
     @mock.patch("load_psql.table_data.magstats.lit")
     def test_select(self, lit, col):
-        resp = self.table_data.select()
+        resp = self.table_data.select([])
         self.assertEqual(
             resp,
             self.table_data.dataframe.withColumn.return_value.withColumn.return_value.select.return_value,
@@ -201,15 +207,17 @@ class PS1TableDataTest(unittest.TestCase):
 
     @mock.patch("load_psql.table_data.ps1.col")
     @mock.patch("load_psql.table_data.ps1.countDistinct")
-    @mock.patch("load_psql.table_data.ps1.PS1TableData.apply_fun")
-    def test_select(self, fun, lit, col):
+    @mock.patch("load_psql.table_data.ps1.spark_min")
+    def test_select(self, spark_min, lit, col):
         from load_psql.table_data.table_columns import ps1_col
 
-        resp = self.table_data.select(mock.MagicMock())
-        self.assertNotIn("objectId", ps1_col)
-        self.assertNotIn("unique1", ps1_col)
-        self.assertNotIn("unique2", ps1_col)
-        self.assertNotIn("unique3", ps1_col)
+        ps1_col_cpy = ps1_col.copy()
+
+        resp = self.table_data.select(ps1_col_cpy, mock.MagicMock())
+        self.assertNotIn("objectId", ps1_col_cpy)
+        self.assertNotIn("unique1", ps1_col_cpy)
+        self.assertNotIn("unique2", ps1_col_cpy)
+        self.assertNotIn("unique3", ps1_col_cpy)
 
     def test_save(self):
         output_dir = "test"
@@ -232,15 +240,18 @@ class GaiaTableDataTest(unittest.TestCase):
 
     @mock.patch("load_psql.table_data.gaia.col")
     @mock.patch("load_psql.table_data.gaia.countDistinct")
-    @mock.patch("load_psql.table_data.gaia.GaiaTableData.apply_fun")
+    @mock.patch("load_psql.table_data.gaia.spark_min")
+    @mock.patch("load_psql.table_data.gaia.spark_abs")
     @mock.patch("load_psql.table_data.gaia.GaiaTableData.compare_threshold")
-    def test_select(self, comp_threshold, fun, count, col):
+    def test_select(self, comp_threshold, spark_abs, spark_min, count, col):
         from load_psql.table_data.table_columns import gaia_col
 
-        resp = self.table_data.select(mock.MagicMock(), mock.MagicMock())
-        self.assertNotIn("objectId", gaia_col)
-        self.assertNotIn("candid", gaia_col)
-        self.assertNotIn("unique1", gaia_col)
+        gaia_col_cpy = gaia_col.copy()
+
+        resp = self.table_data.select(gaia_col_cpy, mock.MagicMock(), mock.MagicMock())
+        self.assertNotIn("objectId", gaia_col_cpy)
+        self.assertNotIn("candid", gaia_col_cpy)
+        self.assertNotIn("unique1", gaia_col_cpy)
 
     def test_save(self):
         output_dir = "test"
@@ -263,13 +274,15 @@ class ReferenceTableDataTest(unittest.TestCase):
 
     @mock.patch("load_psql.table_data.reference.col")
     @mock.patch("load_psql.table_data.reference.Window")
-    @mock.patch("load_psql.table_data.reference.ReferenceTableData.apply_fun")
-    def test_select(self, fun, window, col):
+    @mock.patch("load_psql.table_data.reference.spark_min")
+    def test_select(self, spark_min, window, col):
         from load_psql.table_data.table_columns import ref_col
 
-        resp = self.table_data.select(mock.MagicMock(), mock.MagicMock())
-        self.assertNotIn("objectId", ref_col)
-        self.assertNotIn("rfid", ref_col)
+        ref_col_cpy = ref_col.copy()
+
+        resp = self.table_data.select(ref_col_cpy, mock.MagicMock())
+        self.assertNotIn("objectId", ref_col_cpy)
+        self.assertNotIn("rfid", ref_col_cpy)
 
     def test_save(self):
         output_dir = "test"
