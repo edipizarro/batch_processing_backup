@@ -22,6 +22,7 @@ class XmatchTableData(TableData):
             .withColumnRenamed("distance", "dist")
             .withColumn("class_catalog", lit(None).cast(StringType()))
             .withColumn("period", lit(None).cast(StringType()))
+            .dropDuplicates(["oid", "catid"])
         )
 
         return sel_xmatch
