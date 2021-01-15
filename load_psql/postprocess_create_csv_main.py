@@ -9,7 +9,7 @@ from load_psql.loaders import (
     GaiaCSVLoader,
     DataQualityCSVLoader,
     XmatchCSVLoader,
-    AllwiseCSVLoader
+    AllwiseCSVLoader,
 )
 from load_psql.table_data.table_columns import (
     det_col,
@@ -22,7 +22,7 @@ from load_psql.table_data.table_columns import (
     gaia_col,
     ref_col,
     xmatch_col,
-    allwise_col
+    allwise_col,
 )
 
 from pyspark.sql import SparkSession, Window
@@ -124,7 +124,7 @@ def get_config_from_file(path: str) -> dict:
 
 def get_config_from_str(config: str) -> dict:
     data = json.loads(config)
-    return data["load_psql_config"]
+    return data
 
 
 @click.command()
@@ -262,23 +262,13 @@ def process_csv(
         loader_load_csv(DataQualityCSVLoader, "dataquality", config)
     if config["tables"]["xmatch"]:
         loader_create_csv(
-            XmatchCSVLoader,
-            "xmatch",
-            config,
-            spark,
-            default_args,
-            xmatch_col.copy()
+            XmatchCSVLoader, "xmatch", config, spark, default_args, xmatch_col.copy()
         )
         loader_load_csv(XmatchCSVLoader, "xmatch", config)
 
     if config["tables"]["allwise"]:
         loader_create_csv(
-            AllwiseCSVLoader,
-            "allwise",
-            config,
-            spark,
-            default_args,
-            allwise_col.copy()
+            AllwiseCSVLoader, "allwise", config, spark, default_args, allwise_col.copy()
         )
         loader_load_csv(AllwiseCSVLoader, "allwise", config)
 
@@ -414,22 +404,12 @@ def create_csv(config_file, config_json, loglevel):
         )
     if config["tables"]["xmatch"]:
         loader_create_csv(
-            XmatchCSVLoader,
-            "xmatch",
-            config,
-            spark,
-            default_args,
-            xmatch_col.copy()
+            XmatchCSVLoader, "xmatch", config, spark, default_args, xmatch_col.copy()
         )
 
     if config["tables"]["allwise"]:
         loader_create_csv(
-            AllwiseCSVLoader,
-            "allwise",
-            config,
-            spark,
-            default_args,
-            allwise_col.copy()
+            AllwiseCSVLoader, "allwise", config, spark, default_args, allwise_col.copy()
         )
 
     if config["tables"]["probability"]:
