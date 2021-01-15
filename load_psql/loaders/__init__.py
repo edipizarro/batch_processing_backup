@@ -9,4 +9,6 @@ from .loaders import (
     PS1CSVLoader,
     GaiaCSVLoader,
     ReferenceCSVLoader,
+    AllwiseCSVLoader,
+    XmatchCSVLoader,
 )
