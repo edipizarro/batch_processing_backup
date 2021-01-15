@@ -1,9 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-
-{% if {{params.virtualenv}} -%}
+{% if params.virtualenv %}
 conda activate {{params.virtualenv}}
 {% endif %}
-
-python main.py create-csv --config_json={{params.vars}}
+cd batch_processing
+python main.py create-csv --config_json='{{params.vars}}'
