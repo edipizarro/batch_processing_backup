@@ -20,7 +20,7 @@ class XmatchTableData(TableData):
             .withColumnRenamed("designation", "oid_catalog")
             .withColumnRenamed("objectId_2", "oid")
             .withColumnRenamed("distance", "dist")
-            .withColumn("class_catalog", lit(None))
+            .withColumn("class_catalog", lit(None).cast(StringType()))
             .withColumn("period", lit(None).cast(StringType()))
         )
 
