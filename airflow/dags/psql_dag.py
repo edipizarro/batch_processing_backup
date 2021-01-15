@@ -33,7 +33,7 @@ def get_cat_command(vars, table):
 def psql_populate_db_config(vars):
     session = settings.Session()
     conn = session.query(Connection).filter(Connection.conn_id == "ztf_db").first()
-    parsed = urlparse.urlparse(conn.get_uri())
+    parsed = urlparse(conn.get_uri())
     vars["db"]["user"] = parsed.username
     vars["db"]["password"] = parsed.password
     vars["db"]["host"] = parsed.hostname
@@ -41,15 +41,30 @@ def psql_populate_db_config(vars):
     vars["db"]["dbname"] = parsed.path[1:]
 
 
+def get_aws_credentials():
+    session = settings.Session()
+    conn = session.query(Connection).filter(Connection.conn_id == "aws_default").first()
+    parsed = urlparse(conn.get_uri())
+    credentials = parsed.split(":")
+    access_key = credentials[0]
+    secret_access_key = credentials[1][:-1]
+    return access_key, secret_access_key
+
+
 def get_create_csv_tasks(dag):
     psql_load_vars = Variable.get("load_psql_config", deserialize_json=True)
+    aws_access_key, aws_secret_access_key = get_aws_credentials()
     execute_create_csv = SSHOperator(
         task_id="launch_create_csv",
         ssh_conn_id="reuna_connection",
-        command="../templates/reuna_create_csv_template.sh",
+        command="reuna_create_csv_template.sh",
+        environment={
+            "AWS_ACCESS_KEY_ID": aws_access_key,
+            "AWS_SECRET_ACCESS_KEY": aws_secret_access_key,
+        },
         params={
             "virtualenv": psql_load_vars.get("virtualenv", False),
-            "vars": psql_load_vars,
+            "vars": json.dumps(psql_load_vars),
         },
         dag=dag,
     )
@@ -76,10 +91,14 @@ def get_psql_copy_csv_tasks(dag):
     execute_copy_csv = SSHOperator(
         task_id="launch_psql_copy_csv",
         ssh_conn_id="reuna_connection",
-        command="../templates/reuna_copy_csv_template.sh",
+        command="reuna_copy_csv_template.sh",
+        environment={
+            "AWS_ACCESS_KEY_ID": aws_access_key,
+            "AWS_SECRET_ACCESS_KEY": aws_secret_access_key,
+        },
         params={
             "virtualenv": psql_load_vars.get("virtualenv", False),
-            "vars": psql_load_vars,
+            "vars": json.dumps(psql_load_vars),
         },
         dag=dag,
     )
@@ -99,7 +118,7 @@ def get_psql_copy_csv_tasks(dag):
         count_psql_tuples = SqlSensor(
             task_id=f"count_sql_tuples_{table}",
             conn_id="ztf_db",
-            sql="../templates/sql_count_command.sql",
+            sql="sql_count_command.sql",
             parameters={"table": table},
             fail_on_empty=False,
             timeout=60 * 60 * 10,
@@ -115,10 +134,14 @@ def get_process_csv_tasks(dag):
     execute_process_csv = SSHOperator(
         task_id="launch_process_csv",
         ssh_conn_id="reuna_connection",
-        command="../templates/reuna_process_csv_template.sh",
+        command="reuna_process_csv_template.sh",
+        environment={
+            "AWS_ACCESS_KEY_ID": aws_access_key,
+            "AWS_SECRET_ACCESS_KEY": aws_secret_access_key,
+        },
         params={
             "virtualenv": psql_load_vars.get("virtualenv", False),
-            "vars": psql_load_vars,
+            "vars": json.dumps(psql_load_vars),
         },
         dag=dag,
     )
@@ -145,7 +168,7 @@ def get_process_csv_tasks(dag):
         count_psql_tuples = SqlSensor(
             task_id=f"count_sql_tuples_{table}",
             conn_id="ztf_db",
-            sql="../templates/sql_count_command.sql",
+            sql="sql_count_command.sql",
             parameters={"table": table},
             fail_on_empty=False,
             timeout=60 * 60 * 10,
