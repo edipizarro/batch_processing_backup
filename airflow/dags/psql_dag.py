@@ -43,7 +43,9 @@ def psql_populate_db_config(vars):
 
 def get_aws_credentials():
     session = settings.Session()
-    conn = session.query(Connection).filter(Connection.conn_id == "aws_default").first()
+    conn = (
+        session.query(Connection).filter(Connection.conn_id == "aws_connection").first()
+    )
     parsed = urlparse(conn.get_uri())
     credentials = parsed.netloc.split(":")
     access_key = credentials[0]
@@ -88,6 +90,7 @@ def get_create_csv_tasks(dag):
 def get_psql_copy_csv_tasks(dag):
     psql_load_vars = Variable.get("load_psql_config", deserialize_json=True)
     psql_populate_db_config(psql_load_vars)
+    aws_access_key, aws_secret_access_key = get_aws_credentials()
     execute_copy_csv = SSHOperator(
         task_id="launch_psql_copy_csv",
         ssh_conn_id="reuna_connection",
@@ -131,6 +134,7 @@ def get_psql_copy_csv_tasks(dag):
 def get_process_csv_tasks(dag):
     psql_load_vars = Variable.get("load_psql_config", deserialize_json=True)
     psql_populate_db_config(psql_load_vars)
+    aws_access_key, aws_secret_access_key = get_aws_credentials()
     execute_process_csv = SSHOperator(
         task_id="launch_process_csv",
         ssh_conn_id="reuna_connection",
