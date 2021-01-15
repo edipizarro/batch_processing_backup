@@ -23,7 +23,7 @@
       "detection": true,
       "non_detection": false,
       "object": false,
-      "magstats": false,
+      "magstat": false,
       "ps1_ztf": false,
       "ss_ztf": false,
       "reference": false,
