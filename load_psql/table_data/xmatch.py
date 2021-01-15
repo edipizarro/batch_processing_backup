@@ -1,5 +1,7 @@
 from .generic import TableData
 from pyspark.sql.functions import col, lit
+from pyspark.sql.types import StringType
+
 
 # oid, catid, oid_catalog,dist
 
@@ -19,7 +21,7 @@ class XmatchTableData(TableData):
             .withColumnRenamed("objectId_2", "oid")
             .withColumnRenamed("distance", "dist")
             .withColumn("class_catalog", lit(None))
-            .withColumn("period", lit(None))
+            .withColumn("period", lit(None).cast(StringType()))
         )
 
         return sel_xmatch
