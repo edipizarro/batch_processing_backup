@@ -8,3 +8,5 @@ from .magstats import MagstatsTableData
 from .ps1 import PS1TableData
 from .gaia import GaiaTableData
 from .reference import ReferenceTableData
+from .xmatch import XmatchTableData
+from .allwise import AllwiseTableData
