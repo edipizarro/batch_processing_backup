@@ -45,7 +45,7 @@ def get_aws_credentials():
     session = settings.Session()
     conn = session.query(Connection).filter(Connection.conn_id == "aws_default").first()
     parsed = urlparse(conn.get_uri())
-    credentials = parsed.split(":")
+    credentials = parsed.netloc.split(":")
     access_key = credentials[0]
     secret_access_key = credentials[1][:-1]
     return access_key, secret_access_key
