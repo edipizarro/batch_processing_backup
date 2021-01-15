@@ -67,6 +67,8 @@ def get_create_csv_tasks(dag):
         params={
             "virtualenv": psql_load_vars.get("virtualenv", False),
             "vars": json.dumps(psql_load_vars),
+            "aws_access_key": aws_access_key,
+            "aws_secret_access_key": aws_secret_access_key,
         },
         dag=dag,
     )
@@ -102,6 +104,8 @@ def get_psql_copy_csv_tasks(dag):
         params={
             "virtualenv": psql_load_vars.get("virtualenv", False),
             "vars": json.dumps(psql_load_vars),
+            "aws_access_key": aws_access_key,
+            "aws_secret_access_key": aws_secret_access_key,
         },
         dag=dag,
     )
@@ -146,6 +150,8 @@ def get_process_csv_tasks(dag):
         params={
             "virtualenv": psql_load_vars.get("virtualenv", False),
             "vars": json.dumps(psql_load_vars),
+            "aws_access_key": aws_access_key,
+            "aws_secret_access_key": aws_secret_access_key,
         },
         dag=dag,
     )
