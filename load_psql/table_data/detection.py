@@ -4,7 +4,7 @@ from pyspark.sql.functions import (
     col,
     lit,
 )
-from pyspark.sql.types import IntegerType
+from pyspark.sql.types import IntegerType, LongType
 
 
 class DetectionTableData(TableData):
@@ -15,7 +15,7 @@ class DetectionTableData(TableData):
                 "i.aimagerat",
                 "i.bimage",
                 "i.bimagerat",
-                tt_det["i.candid"].cast(IntegerType()),
+                tt_det["i.candid"].cast(LongType()),
                 "i.chinr",
                 "i.chipsf",
                 "i.classtar",
