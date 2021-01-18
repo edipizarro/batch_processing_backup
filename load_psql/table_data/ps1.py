@@ -1,7 +1,7 @@
 from .generic import TableData
 from pyspark.sql.functions import col, countDistinct
 from pyspark.sql.functions import min as spark_min
-from pyspark.sql.types import LongType
+from pyspark.sql.types import LongType, IntegerType
 
 
 class PS1TableData(TableData):
@@ -61,6 +61,7 @@ class PS1TableData(TableData):
             .withColumn("unique1", col("count1") != 1)
             .withColumn("unique2", col("count2") != 1)
             .withColumn("unique3", col("count3") != 1)
+            .withColumn("nmtchps", col("nmtchps").cast(IntegerType()))
             .drop("count1")
             .drop("count2")
             .drop("count3")
