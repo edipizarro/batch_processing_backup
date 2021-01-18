@@ -29,7 +29,7 @@ services:
     environment:
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__FERNET_KEY=your_fernet_key
+      - AIRFLOW__CORE__FERNET_KEY=${FERNET_KEY}
       - AIRFLOW__CORE__ENABLE_XCOM_PICKLING=True
       - AIRFLOW_CONN_AWS_DEFAULT=aws://acess_key_id:secret_access_key@
       - AWS_DEFAULT_REGION=us-east-1
@@ -51,7 +51,7 @@ services:
     environment:
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__FERNET_KEY=your_fernet_key
+      - AIRFLOW__CORE__FERNET_KEY=${FERNET_KEY}
       - AIRFLOW__CORE__ENABLE_XCOM_PICKLING=True
       - AIRFLOW_CONN_AWS_DEFAULT=aws://acess_key_id:secret_access_key@
       - AWS_DEFAULT_REGION=us-east-1

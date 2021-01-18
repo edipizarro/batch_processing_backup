@@ -50,6 +50,15 @@ psql_create_and_copy_csv_dag = DAG(
     template_searchpath="/opt/airflow/templates",
 )
 
+leftraru_jobs_dag = DAG(
+    "leftraru_jobs_dag",
+    default_args=default_args,
+    description="compute correction, get magnitude statistics and object statistics",
+    start_date=days_ago(2),
+    schedule_interval=None,
+    template_searchpath="/opt/airflow/templates",
+)
+
 # dag = DAG(
 #     "batch_processing",
 #     default_args=default_args,

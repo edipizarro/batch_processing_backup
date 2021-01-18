@@ -1,4 +1,11 @@
 {
+  "leftraru_config": {
+    "partitions": "",
+    "detections_uri": "",
+    "non_detections_uri": "",
+    "detections_pattern": "",
+    "non_detections_pattern": ""
+  },
   "partition_dets_ndets_config": {
     "source_avro": "",
     "output_detections": "",
