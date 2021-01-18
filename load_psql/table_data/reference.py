@@ -2,7 +2,7 @@ from .generic import TableData
 from pyspark.sql import Window
 from pyspark.sql.functions import col
 from pyspark.sql.functions import min as spark_min
-from pyspark.sql.types import IntegerType
+from pyspark.sql.types import IntegerType, LongType
 
 
 class ReferenceTableData(TableData):
@@ -36,6 +36,7 @@ class ReferenceTableData(TableData):
             )
             .withColumn("i.jdstartref", tt_ref["i.jdstartref"] - 2400000.5)
             .withColumn("i.jdendref", tt_ref["i.jdendref"] - 2400000.5)
+            .withColumn("candid", col("candid").cast(LongType()))
             .withColumnRenamed("i.jdstartref", "mjdstartref")
             .withColumnRenamed("i.jdendref", "mjdendref")
             .where(col("candid") == col("auxcandid"))
@@ -50,7 +51,7 @@ class ReferenceTableData(TableData):
             .select(
                 *[
                     col(c).cast(IntegerType())
-                    if c in ["rfid", "candid", "nframesref"]
+                    if c in ["rfid", "nframesref"]
                     else col(c)
                     for c in column_list
                 ]

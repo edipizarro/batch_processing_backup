@@ -1,7 +1,7 @@
 from .generic import TableData
 from pyspark.sql.functions import col, countDistinct
 from pyspark.sql.functions import min as spark_min
-from pyspark.sql.types import IntegerType
+from pyspark.sql.types import LongType, IntegerType
 
 
 class PS1TableData(TableData):
@@ -16,9 +16,8 @@ class PS1TableData(TableData):
         tt_ps1 = self.dataframe.select(
             "objectId",
             *[
-                col(c).cast(IntegerType())
-                if c
-                in ["candid", "objectidps1", "objectidps2", "objectidps3", "nmtchps"]
+                col(c).cast(LongType())
+                if c in ["candid", "objectidps1", "objectidps2", "objectidps3"]
                 else col(c)
                 for c in column_list
             ],

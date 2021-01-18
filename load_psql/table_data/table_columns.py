@@ -177,12 +177,7 @@ ref_col = [
 ]
 
 
-xmatch_col = [
-    "objectId_2",
-    "catid",
-    "designation",
-    "distance"
-]
+xmatch_col = ["objectId_2", "catid", "designation", "distance"]
 
 allwise_col = [
     "designation",
