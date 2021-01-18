@@ -57,7 +57,7 @@ class DetectionTableData(TableData):
                 "i.objectidps1",
                 "i.objectidps2",
                 "i.objectidps3",
-                tt_det["i.parent_candid"].cast(IntegerType()),
+                tt_det["i.parent_candid"].cast(LongType()),
                 "i.pdiffimfilename",
                 "i.pid",
                 "i.programid",
