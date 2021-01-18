@@ -60,15 +60,9 @@ def get_create_csv_tasks(dag):
         task_id="launch_create_csv",
         ssh_conn_id="reuna_connection",
         command="reuna_create_csv_template.sh",
-        environment={
-            "AWS_ACCESS_KEY_ID": aws_access_key,
-            "AWS_SECRET_ACCESS_KEY": aws_secret_access_key,
-        },
         params={
             "virtualenv": psql_load_vars.get("virtualenv", False),
             "vars": json.dumps(psql_load_vars),
-            "aws_access_key": aws_access_key,
-            "aws_secret_access_key": aws_secret_access_key,
         },
         dag=dag,
     )
@@ -97,15 +91,9 @@ def get_psql_copy_csv_tasks(dag):
         task_id="launch_psql_copy_csv",
         ssh_conn_id="reuna_connection",
         command="reuna_copy_csv_template.sh",
-        environment={
-            "AWS_ACCESS_KEY_ID": aws_access_key,
-            "AWS_SECRET_ACCESS_KEY": aws_secret_access_key,
-        },
         params={
             "virtualenv": psql_load_vars.get("virtualenv", False),
             "vars": json.dumps(psql_load_vars),
-            "aws_access_key": aws_access_key,
-            "aws_secret_access_key": aws_secret_access_key,
         },
         dag=dag,
     )
@@ -143,15 +131,9 @@ def get_process_csv_tasks(dag):
         task_id="launch_process_csv",
         ssh_conn_id="reuna_connection",
         command="reuna_process_csv_template.sh",
-        environment={
-            "AWS_ACCESS_KEY_ID": aws_access_key,
-            "AWS_SECRET_ACCESS_KEY": aws_secret_access_key,
-        },
         params={
             "virtualenv": psql_load_vars.get("virtualenv", False),
             "vars": json.dumps(psql_load_vars),
-            "aws_access_key": aws_access_key,
-            "aws_secret_access_key": aws_secret_access_key,
         },
         dag=dag,
     )
