@@ -1,7 +1,7 @@
 from .generic import TableData
 from pyspark.sql.functions import col, countDistinct
 from pyspark.sql.functions import min as spark_min
-from pyspark.sql.types import IntegerType
+from pyspark.sql.types import LongType
 
 
 class PS1TableData(TableData):
@@ -15,9 +15,8 @@ class PS1TableData(TableData):
         tt_ps1 = self.dataframe.select(
             "objectId",
             *[
-                col(c).cast(IntegerType())
-                if c
-                in ["candid", "objectidps1", "objectidps2", "objectidps3", "nmtchps"]
+                col(c).cast(LongType())
+                if c in ["candid", "objectidps1", "objectidps2", "objectidps3"]
                 else col(c)
                 for c in column_list
             ],
@@ -36,9 +35,9 @@ class PS1TableData(TableData):
             .join(tt_ps1.alias("c"), "objectId", "inner")
             .select(
                 "objectId",
-                col("i.objectidps1").alias("min_objectidps1").cast(IntegerType()),
-                col("i.objectidps2").alias("min_objectidps2").cast(IntegerType()),
-                col("i.objectidps3").alias("min_objectidps3").cast(IntegerType()),
+                col("i.objectidps1").alias("min_objectidps1").cast(LongType()),
+                col("i.objectidps2").alias("min_objectidps2").cast(LongType()),
+                col("i.objectidps3").alias("min_objectidps3").cast(LongType()),
                 *[col("i." + c).alias(c) for c in column_list],
             )
             .withColumn("unique1", col("min_objectidps1") != col("objectidps1"))
