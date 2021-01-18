@@ -29,6 +29,7 @@ create_csv_dag = DAG(
     description="create_csv in reuna",
     start_date=days_ago(2),
     schedule_interval=None,
+    template_searchpath="/opt/airflow/templates",
 )
 
 psql_copy_csv_dag = DAG(
@@ -37,6 +38,7 @@ psql_copy_csv_dag = DAG(
     description="copy csv to psql db in reuna",
     start_date=days_ago(2),
     schedule_interval=None,
+    template_searchpath="/opt/airflow/templates",
 )
 
 psql_create_and_copy_csv_dag = DAG(
@@ -45,6 +47,7 @@ psql_create_and_copy_csv_dag = DAG(
     description="create and copy csv to psql db in reuna",
     start_date=days_ago(2),
     schedule_interval=None,
+    template_searchpath="/opt/airflow/templates",
 )
 
 # dag = DAG(
