@@ -26,6 +26,15 @@ class PS1TableData(TableData):
             tt_ps1.withColumn(
                 "mincandid", spark_min(col("candid")).over(obj_cid_window)
             )
+            .withColumn(
+                "min_objectidps1", spark_min(col("objectidps1")).over(obj_cid_window)
+            )
+            .withColumn(
+                "min_objectidps2", spark_min(col("objectidps2")).over(obj_cid_window)
+            )
+            .withColumn(
+                "min_objectidps3", spark_min(col("objectidps3")).over(obj_cid_window)
+            )
             .where(col("candid") == col("mincandid"))
             .select("objectId", *column_list)
         )
@@ -35,14 +44,14 @@ class PS1TableData(TableData):
             .join(tt_ps1.alias("c"), "objectId", "inner")
             .select(
                 "objectId",
-                col("i.objectidps1").alias("min_objectidps1").cast(LongType()),
-                col("i.objectidps2").alias("min_objectidps2").cast(LongType()),
-                col("i.objectidps3").alias("min_objectidps3").cast(LongType()),
+                col("i.min_objectidps1").cast(LongType()),
+                col("i.min_objectidps2").cast(LongType()),
+                col("i.min_objectidps3").cast(LongType()),
                 *[col("i." + c).alias(c) for c in column_list],
             )
-            .withColumn("unique1", col("min_objectidps1") != col("objectidps1"))
-            .withColumn("unique2", col("min_objectidps2") != col("objectidps2"))
-            .withColumn("unique3", col("min_objectidps3") != col("objectidps3"))
+            .withColumn("unique1", col("i.min_objectidps1") != col("c.objectidps1"))
+            .withColumn("unique2", col("i.min_objectidps2") != col("c.objectidps2"))
+            .withColumn("unique3", col("i.min_objectidps3") != col("c.objectidps3"))
             .fillna({"nmtchps": 0})
             .drop("min_objectidps1")
             .drop("min_objectidps2")
@@ -58,9 +67,9 @@ class PS1TableData(TableData):
                 countDistinct("unique2").alias("count2"),
                 countDistinct("unique3").alias("count3"),
             )
-            .withColumn("unique1", col("count1") != 1)
-            .withColumn("unique2", col("count2") != 1)
-            .withColumn("unique3", col("count3") != 1)
+            .withColumn("unique1", col("count1") == 1)
+            .withColumn("unique2", col("count2") == 1)
+            .withColumn("unique3", col("count3") == 1)
             .withColumn("nmtchps", col("nmtchps").cast(IntegerType()))
             .drop("count1")
             .drop("count2")
