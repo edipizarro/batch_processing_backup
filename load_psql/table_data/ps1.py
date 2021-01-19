@@ -58,6 +58,7 @@ class PS1TableData(TableData):
             .withColumn("unique1", col("count1") == 1)
             .withColumn("unique2", col("count2") == 1)
             .withColumn("unique3", col("count3") == 1)
+            .withColumn("nmtchps", col("nmtchps").cast(IntegerType()))
             .drop("count1")
             .drop("count2")
             .drop("count3")
