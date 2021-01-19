@@ -59,7 +59,7 @@ def get_stamps(input_path, output_path, jd, nstamps, loglevel):
     result = selection.withColumn("rownum", row_number().over(w)) \
         .where(col("rownum") <= nstamps) \
         .drop("rownum")
-    result = result.filter("jd" >= jd)
+    result = result.filter(col("jd") >= jd)
     result.write.save(output_path)
     total = time.time() - start
     logging.info("TOTAL_TIME=%s" % (str(total)))
