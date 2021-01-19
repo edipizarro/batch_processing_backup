@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euo pipefail
 
 sudo yum install -y git
 git clone https://github.com/alercebroker/batch_processing.git /tmp/batch_processing
