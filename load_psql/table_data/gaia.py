@@ -31,20 +31,19 @@ class GaiaTableData(TableData):
         data_gaia = (
             tt_gaia_min.alias("i")
             .join(tt_gaia.alias("c"), "objectId", "inner")
-            .select(
-                "objectId",
-                "i.candid",
-                col("i.maggaia").alias("min_maggaia"),
-                *[col("i." + c).alias(c) for c in column_list]
-            )
             .withColumn(
                 "unique1",
                 self.compare_threshold(
-                    spark_abs(col("min_maggaia") - col("maggaia")),
+                    spark_abs(col("i.maggaia") - col("c.maggaia")),
                     real_threshold,
                 ),
             )
-            .drop("min_maggaia")
+            .select(
+                "objectId",
+                col("i.candid").alias("candid"),
+                *[col("i." + c).alias(c) for c in column_list],
+                "unique1"
+            )
         )
 
         gr_gaia = (
