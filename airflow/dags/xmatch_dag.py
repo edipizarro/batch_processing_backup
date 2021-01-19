@@ -28,7 +28,7 @@ GROUP_MARKET = xmatch_vars.get("instance_group_market", "ON_DEMAND")
 def get_xmatch_tasks(dag):
     SPARK_STEPS = [
         {
-            "Name": "Partition Detections and Non Detections",
+            "Name": "Compute Xmatch",
             "ActionOnFailure": "TERMINATE_JOB_FLOW",
             "HadoopJarStep": {
                 "Jar": "command-runner.jar",
