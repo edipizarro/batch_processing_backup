@@ -1,10 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-
+cd batch_proccessing
 {% if {{params.virtualenv}} -%}
 conda activate {{params.virtualenv}}
 {% endif %}
-
-python main.py psql-copy-csv --config_json={{params.vars}}
-
+python main.py psql-copy-csv --config_json='{{params.vars}}' &

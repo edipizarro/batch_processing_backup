@@ -7,9 +7,7 @@ class ObjectTableData(TableData):
     def select(self, column_list):
         sel_obj = self.dataframe.select(
             *[
-                col(c).cast(IntegerType())
-                if c in ["sigmara", "sigmadec", "ndethist", "ncovhist"]
-                else col(c)
+                col(c).cast(IntegerType()) if c in ["ndethist", "ncovhist"] else col(c)
                 for c in column_list
             ],
         )

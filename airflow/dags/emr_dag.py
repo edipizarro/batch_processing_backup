@@ -116,7 +116,7 @@ def get_emr_tasks(dag):
     job_flow_creator = EmrCreateJobFlowOperator(
         task_id="create_job_flow",
         job_flow_overrides=JOB_FLOW_OVERRIDES,
-        aws_conn_id="aws_default",
+        aws_conn_id="aws_connection",
         emr_conn_id="emr_default",
         dag=dag,
     )
@@ -124,7 +124,7 @@ def get_emr_tasks(dag):
     job_sensor = EmrJobFlowSensor(
         task_id="check_job_flow",
         job_flow_id="{{ task_instance.xcom_pull(task_ids='create_job_flow', key='return_value') }}",
-        aws_conn_id="aws_default",
+        aws_conn_id="aws_connection",
         dag=dag,
     )
 
