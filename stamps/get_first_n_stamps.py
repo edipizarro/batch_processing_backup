@@ -43,7 +43,6 @@ def get_stamps(input_path, output_path, jd, nstamps, loglevel):
 
     # read from bucket
     ztf = spark.read.format("avro").load(input_path)
-    ztf = ztf.filter("candidate.jd" >= jd)
 
     # select fields
     selection = ztf.select(
@@ -53,7 +52,6 @@ def get_stamps(input_path, output_path, jd, nstamps, loglevel):
         col("cutoutScience.stampData").alias("cutoutScience"),
         col("cutoutTemplate.stampData").alias("cutoutTemplate")) \
         .withColumnRenamed("objectId", "oid")
-
     selection = selection.dropDuplicates((['oid', 'candid']))
 
     # select first n detections
@@ -61,7 +59,7 @@ def get_stamps(input_path, output_path, jd, nstamps, loglevel):
     result = selection.withColumn("rownum", row_number().over(w)) \
         .where(col("rownum") <= nstamps) \
         .drop("rownum")
-
+    result = result.filter("jd" >= jd)
     result.write.save(output_path)
     total = time.time() - start
     logging.info("TOTAL_TIME=%s" % (str(total)))
