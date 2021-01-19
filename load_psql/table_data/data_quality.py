@@ -1,6 +1,6 @@
 from .generic import TableData
 from pyspark.sql.functions import col
-from pyspark.sql.types import IntegerType
+from pyspark.sql.types import LongType
 
 
 class DataQualityTableData(TableData):
@@ -10,7 +10,7 @@ class DataQualityTableData(TableData):
         column_list.remove("candid")
         tt_qua = tt_det.select(
             "objectId",
-            tt_det["candid"].cast(IntegerType()),
+            tt_det["candid"].cast(LongType()),
             *[col("c." + c).alias(c) for c in column_list]
         )
         return tt_qua
