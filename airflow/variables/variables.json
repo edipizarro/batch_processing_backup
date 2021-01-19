@@ -9,6 +9,16 @@
     "core_instance_type": "",
     "core_instance_count": 1
   },
+  "compute_xmatch_config": {
+    "source_objects": "s3a://ztf-historic-data/20210106/object",
+    "output_xmatch": "s3a://ztf-historic-data/20210118/xmatch-test",
+    "source_catalog": "s3a://allwise",
+    "bootstrap_actions_script": "s3://alerce-static/emr/bootstrap-actions/xmatch_emr_install_software.sh",
+    "master_instance_type": "m5.xlarge",
+    "master_instance_count": 1,
+    "core_instance_type": "m5.4xlarge",
+    "core_instance_count": 30
+  },
   "load_psql_config": {
     "spark.driver.memory": "",
     "spark.local.dir": "",
