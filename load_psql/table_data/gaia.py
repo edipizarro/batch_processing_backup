@@ -14,6 +14,7 @@ class GaiaTableData(TableData):
         column_list.remove("candid")
         column_list.remove("unique1")
 
+        tt_det = tt_det.where(col("has_stamp"))
         tt_gaia = tt_det.select(
             "objectId", "candid", *[col("c." + c).alias(c) for c in column_list]
         )
@@ -49,7 +50,7 @@ class GaiaTableData(TableData):
         gr_gaia = (
             data_gaia.groupBy("objectId", "candid", *column_list)
             .agg(countDistinct("unique1").alias("count1"))
-            .withColumn("unique1", col("count1") != 1)
+            .withColumn("unique1", col("count1") == 1)
             .drop("count1")
         )
 
