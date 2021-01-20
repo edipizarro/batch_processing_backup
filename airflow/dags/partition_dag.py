@@ -82,7 +82,7 @@ def get_emr_tasks(dag):
             "InstanceGroups": [
                 {
                     "Name": "Master node",
-                    "Market": "SPOT",
+                    "Market": GROUP_MARKET,
                     "InstanceRole": "MASTER",
                     "InstanceType": MASTER_INSTANCE_TYPE,
                     "InstanceCount": int(MASTER_INSTANCE_COUNT),
