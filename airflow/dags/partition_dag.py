@@ -25,6 +25,7 @@ TERMINATION_PROTECTED = partition_det_ndet_vars.get("termination_protected", Fal
 CLUSTER_NAME = partition_det_ndet_vars.get("cluster_name", "PartitionDetsNdets")
 GROUP_MARKET = partition_det_ndet_vars.get("instance_group_market", "ON_DEMAND")
 NPARTITIONS = partition_det_ndet_vars.get("n_partitions", 500)
+SPARK_DRIVER_MEMORY = partition_det_ndet_vars.get("spark.driver.memory", "1g")
 
 
 def get_emr_tasks(dag):
@@ -40,6 +41,8 @@ def get_emr_tasks(dag):
                     "spark.pyspark.python=/usr/bin/python3.6",
                     "--conf",
                     "spark.jars.packages=org.apache.spark:spark-avro_2.11:2.4.5",
+                    "--conf",
+                    "spark.driver.memory=" + SPARK_DRIVER_MEMORY,
                     "/tmp/batch_processing/main.py",
                     "partition-dets-ndets",
                     AVRO_SOURCE_FILES,
