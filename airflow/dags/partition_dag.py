@@ -24,6 +24,7 @@ KEEP_JOB_FLOW_ALIVE = partition_det_ndet_vars.get("keep_job_flow_alive", False)
 TERMINATION_PROTECTED = partition_det_ndet_vars.get("termination_protected", False)
 CLUSTER_NAME = partition_det_ndet_vars.get("cluster_name", "PartitionDetsNdets")
 GROUP_MARKET = partition_det_ndet_vars.get("instance_group_market", "ON_DEMAND")
+NPARTITIONS = partition_det_ndet_vars.get("n_partitions", 500)
 
 
 def get_emr_tasks(dag):
@@ -45,6 +46,7 @@ def get_emr_tasks(dag):
                     "detections",
                     "non_detections",
                     "/tmp/batch_processing/partition_avro/alert.avsc",
+                    "-n=" + NPARTITIONS,
                 ],
             },
         },

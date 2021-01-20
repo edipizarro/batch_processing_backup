@@ -25,5 +25,5 @@ cd /tmp/minimal_astroide
 gradle build
 cp /tmp/minimal_astroide/build/libs/minimal_astroide.jar /tmp
 cp /tmp/minimal_astroide/libs/healpix-1.0.jar /tmp
-sudo python3 /tmp/minimal_astroide/python_wrapper/setup.py install
+sudo python3 -m pip install /tmp/minimal_astroide/python_wrapper
 
