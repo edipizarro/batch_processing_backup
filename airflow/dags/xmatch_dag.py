@@ -21,6 +21,7 @@ CORE_INSTANCE_COUNT = xmatch_vars.get("core_instance_count", 1)
 EC2_KEY_NAME = xmatch_vars.get("ssh_key", "alerce")
 KEEP_JOB_FLOW_ALIVE = xmatch_vars.get("keep_job_flow_alive", False)
 TERMINATION_PROTECTED = xmatch_vars.get("termination_protected", False)
+ACTION_ON_FAILURE = xmatch_vars.get("action_on_failure", "TERMINATE_JOB_FLOW")
 CLUSTER_NAME = xmatch_vars.get("cluster_name", "BatchProcessingXmatch")
 GROUP_MARKET = xmatch_vars.get("instance_group_market", "ON_DEMAND")
 
@@ -29,7 +30,7 @@ def get_xmatch_tasks(dag):
     SPARK_STEPS = [
         {
             "Name": "Compute Xmatch",
-            "ActionOnFailure": "TERMINATE_JOB_FLOW",
+            "ActionOnFailure": ACTION_ON_FAILURE,
             "HadoopJarStep": {
                 "Jar": "command-runner.jar",
                 "Args": [

@@ -22,7 +22,7 @@ echo "Unzipped /tmp/gradle.zip to /opt"
 ls /opt
 sudo ln -s /opt/gradle-4.4.1 /opt/gradle
 echo "export GRADLE_HOME=/opt/gradle" >> $HOME/.bashrc
-echo "export PATH=\$PATH:\$GRADLE_HOME/bin" >> $HOME/.bashrc
+echo "export PATH=\$PATH:/opt/gradle/bin" >> $HOME/.bashrc
 source $HOME/.bashrc
 gradle -v
 gradle build
