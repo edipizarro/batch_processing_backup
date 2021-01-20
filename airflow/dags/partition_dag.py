@@ -46,7 +46,7 @@ def get_emr_tasks(dag):
                     "detections",
                     "non_detections",
                     "/tmp/batch_processing/partition_avro/alert.avsc",
-                    "-n=" + NPARTITIONS,
+                    "-n=" + str(NPARTITIONS),
                 ],
             },
         },
