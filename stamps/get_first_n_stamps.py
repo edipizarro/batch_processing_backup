@@ -9,8 +9,7 @@ import os
 @click.argument("output_path", type=str)
 @click.option("--jd", "-j", default=58000.0, help="Filter objects by julian dates")
 @click.option("--nstamps", "-n", default=1, help="Number of first n detections")
-@click.option("--batch-size", "-b", default=20000, help="Number of first n detections")
-@click.option("--partitions", "-p", help="Number of first n detections", type=int)
+@click.option("--partitions", "-p", default=1000, help="Number of first n detections")
 @click.option(
     "--log",
     "loglevel",
@@ -18,7 +17,7 @@ import os
     help="log level to use",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
-def get_stamps(input_path, output_path, jd, nstamps, batch_size, partitions, loglevel):
+def get_stamps(input_path, output_path, jd, nstamps, partitions, loglevel):
     """
     Get first n-stamps given a list of oids
 
@@ -68,13 +67,7 @@ def get_stamps(input_path, output_path, jd, nstamps, batch_size, partitions, log
         col("cutoutTemplate.stampData").alias("cutoutTemplate")) \
         .withColumnRenamed("objectId", "oid")
 
-
-    # select first n detections
-    if partitions:
-        number_partitions = partitions
-    else:
-        number_partitions = math.ceil(result.count() / batch_size)
-    result.coalesce(number_partitions).write.save(os.path.join(output_path, "stamps"))
+    result.coalesce(partitions).write.save(os.path.join(output_path, "stamps"))
     total = time.time() - start
     logging.info("TOTAL_TIME=%s" % (str(total)))
     return
