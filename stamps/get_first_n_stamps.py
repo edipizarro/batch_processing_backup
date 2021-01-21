@@ -44,9 +44,9 @@ def get_stamps(input_path, output_path, jd, nstamps, batch_size, loglevel):
 
     # read from bucket
     candids = spark.read.format("avro").load(input_path).select("objectId", "candid", "candidate.jd")
-    candids = candids.dropDuplicates((['oid', 'candid']))
+    candids = candids.dropDuplicates((['objectId', 'candid']))
 
-    w = Window.partitionBy("oid").orderBy("jd")
+    w = Window.partitionBy("objectId").orderBy("jd")
     candids = candids.withColumn("rownum", row_number().over(w)).where(col("rownum") <= nstamps).drop("rownum")
     candids = candids.filter(col("jd") >= jd)
 
