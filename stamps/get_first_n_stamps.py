@@ -43,24 +43,26 @@ def get_stamps(input_path, output_path, jd, nstamps, batch_size, loglevel):
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
 
     # read from bucket
-    ztf = spark.read.format("avro").load(input_path)
+    candids = spark.read.format("avro").load(input_path).select("objectId", "candid", "jd")
+    candids = candids.dropDuplicates((['oid', 'candid']))
 
+    w = Window.partitionBy("oid").orderBy("jd")
+    candids = candids.withColumn("rownum", row_number().over(w)).where(col("rownum") <= nstamps).drop("rownum")
+    candids = candids.filter(col("jd") >= jd)
+
+    data = spark.read.format("avro").load(input_path)
     # select fields
-    selection = ztf.select(
+    selection = data.select(
         "objectId",
         "candidate.*",
         col("cutoutDifference.stampData").alias("cutoutDifference"),
         col("cutoutScience.stampData").alias("cutoutScience"),
         col("cutoutTemplate.stampData").alias("cutoutTemplate")) \
         .withColumnRenamed("objectId", "oid")
-    selection = selection.dropDuplicates((['oid', 'candid']))
+    result = selection.filter(col("candidate.candid").isin(candids["candid"]))
 
     # select first n detections
-    w = Window.partitionBy("oid").orderBy("jd")
-    result = selection.withColumn("rownum", row_number().over(w)) \
-        .where(col("rownum") <= nstamps) \
-        .drop("rownum")
-    result = result.filter(col("jd") >= jd)
+
     number_partitions = math.ceil(result.count() / batch_size)
     result.coalesce(number_partitions).write.save(output_path)
     total = time.time() - start
