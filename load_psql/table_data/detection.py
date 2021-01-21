@@ -57,7 +57,7 @@ class DetectionTableData(TableData):
                 "i.objectidps1",
                 "i.objectidps2",
                 "i.objectidps3",
-                tt_det["i.parent_candid"].cast(IntegerType()),
+                tt_det["i.parent_candid"].cast(LongType()),
                 "i.pdiffimfilename",
                 "i.pid",
                 "i.programid",
@@ -106,6 +106,7 @@ class DetectionTableData(TableData):
             )
             .withColumn("has_stamp", col("parent_candid") == 0)
             .withColumn("step_id_corr", lit(step_id))
+            .dropDuplicates(["oid", "candid"])
         )
 
         data_det = data_det.fillna("", "rbversion")
