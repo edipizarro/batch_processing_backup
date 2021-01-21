@@ -106,6 +106,7 @@ class DetectionTableData(TableData):
             )
             .withColumn("has_stamp", col("parent_candid") == 0)
             .withColumn("step_id_corr", lit(step_id))
+            .dropDuplicates(["oid", "candid"])
         )
 
         data_det = data_det.fillna("", "rbversion")
