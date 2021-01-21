@@ -43,7 +43,7 @@ def get_stamps(input_path, output_path, jd, nstamps, batch_size, loglevel):
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
 
     # read from bucket
-    candids = spark.read.format("avro").load(input_path).select("objectId", "candid", "jd")
+    candids = spark.read.format("avro").load(input_path).select("objectId", "candid", "candidate.jd")
     candids = candids.dropDuplicates((['oid', 'candid']))
 
     w = Window.partitionBy("oid").orderBy("jd")
