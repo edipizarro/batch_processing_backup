@@ -14,6 +14,7 @@ class GaiaTableData(TableData):
         column_list.remove("candid")
         column_list.remove("unique1")
 
+        tt_det = tt_det.where(col("has_stamp"))
         tt_gaia = tt_det.select(
             "objectId", "candid", *[col("c." + c).alias(c) for c in column_list]
         )
@@ -30,26 +31,25 @@ class GaiaTableData(TableData):
         data_gaia = (
             tt_gaia_min.alias("i")
             .join(tt_gaia.alias("c"), "objectId", "inner")
-            .select(
-                "objectId",
-                "i.candid",
-                col("i.maggaia").alias("min_maggaia"),
-                *[col("i." + c).alias(c) for c in column_list]
-            )
             .withColumn(
                 "unique1",
                 self.compare_threshold(
-                    spark_abs(col("min_maggaia") - col("maggaia")),
+                    spark_abs(col("i.maggaia") - col("c.maggaia")),
                     real_threshold,
                 ),
             )
-            .drop("min_maggaia")
+            .select(
+                "objectId",
+                col("i.candid").alias("candid"),
+                *[col("i." + c).alias(c) for c in column_list],
+                "unique1"
+            )
         )
 
         gr_gaia = (
             data_gaia.groupBy("objectId", "candid", *column_list)
             .agg(countDistinct("unique1").alias("count1"))
-            .withColumn("unique1", col("count1") != 1)
+            .withColumn("unique1", col("count1") == 1)
             .drop("count1")
         )
 
