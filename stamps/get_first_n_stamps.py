@@ -2,6 +2,7 @@ import time
 import click
 import logging
 import math
+import os
 
 @click.command()
 @click.argument("input_path", type=str)
@@ -52,11 +53,14 @@ def get_stamps(input_path, output_path, jd, nstamps, batch_size, partitions, log
     candids = candids.withColumn("rownum", row_number().over(w)).where(col("rownum") <= nstamps).drop("rownum").filter(
         col("jd") >= jd)
 
+    candids.write.save(os.path.join(output_path, "candids"))
     candids = [x.candid for x in candids.select('candid').collect()]
     candids = sc.broadcast(candids)
 
+    selection = all_data.filter(col("candid").isin(candids.value))
+
     # select fields
-    selection = all_data.select(
+    result = selection.select(
         "objectId",
         "candidate.*",
         col("cutoutDifference.stampData").alias("cutoutDifference"),
@@ -64,14 +68,13 @@ def get_stamps(input_path, output_path, jd, nstamps, batch_size, partitions, log
         col("cutoutTemplate.stampData").alias("cutoutTemplate")) \
         .withColumnRenamed("objectId", "oid")
 
-    result = selection.filter(col("candid").isin(candids.value))
 
     # select first n detections
     if partitions:
         number_partitions = partitions
     else:
         number_partitions = math.ceil(result.count() / batch_size)
-    result.coalesce(number_partitions).write.save(output_path)
+    result.coalesce(number_partitions).write.save(os.path.join(output_path, "stamps"))
     total = time.time() - start
     logging.info("TOTAL_TIME=%s" % (str(total)))
     return
