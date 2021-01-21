@@ -1,13 +1,164 @@
 {
   "partition_dets_ndets_config": {
-    "source_avro": "",
-    "output_detections": "",
-    "output_non_detections": "",
-    "bootstrap_actions_script": "",
-    "master_instance_type": "",
-    "master_instance_count": 1,
-    "core_instance_type": "",
-    "core_instance_count": 1
+    "JOB_FLOW_OVERRIDES": {
+      "Name": "CLUSTER_NAME",
+      "ReleaseLabel": "emr-5.29.0",
+      "LogUri": "s3://alerce-airflow-logs/emr",
+      "Instances": {
+        "InstanceGroups": [
+          {
+            "Name": "Master node",
+            "Market": "{ GROUP_MARKET }",
+            "InstanceRole": "MASTER",
+            "InstanceType": "{ MASTER_INSTANCE_TYPE }",
+            "InstanceCount": "{ MASTER_INSTANCE_COUNT }"
+          },
+          {
+            "Name": "Compute node",
+            "Market": "{ GROUP_MARKET }",
+            "InstanceRole": "CORE",
+            "InstanceType": "{ CORE_INSTANCE_TYPE }",
+            "InstanceCount": "{ CORE_INSTANCE_COUNT }"
+          }
+        ],
+        "KeepJobFlowAliveWhenNoSteps": "{ KEEP_JOB_FLOW_ALIVE }",
+        "TerminationProtected": "{ TERMINATION_PROTECTED }",
+        "Ec2KeyName": "EC2_KEY_NAME"
+      },
+      "Steps": [
+        {
+          "Name": "Partition Detections and Non Detections",
+          "ActionOnFailure": "TERMINATE_JOB_FLOW",
+          "HadoopJarStep": {
+            "Jar": "command-runner.jar",
+            "Args": [
+              "spark-submit",
+              "--conf",
+              "spark.pyspark.python=/usr/bin/python3.6",
+              "--conf",
+              "spark.jars.packages=org.apache.spark:spark-avro_2.11:2.4.5",
+              "/tmp/batch_processing/main.py",
+              "partition-dets-ndets",
+              "{AVRO_SOURCE}",
+              "detections",
+              "non_detections",
+              "/tmp/batch_processing/partition_avro/alert.avsc"
+            ]
+          }
+        },
+        {
+          "Name": "Copy detections to s3",
+          "ActionOnFailure": "CONTINUE",
+          "HadoopJarStep": {
+            "Jar": "command-runner.jar",
+            "Args": [
+              "s3-dist-cp",
+              "--dest={OUTPUT_DETECTIONS}",
+              "--src=hdfs:///user/hadoop/detections/"
+            ]
+          }
+        },
+        {
+          "Name": "Copy non detections to s3",
+          "ActionOnFailure": "CONTINUE",
+          "HadoopJarStep": {
+            "Jar": "command-runner.jar",
+            "Args": [
+              "s3-dist-cp",
+              "--dest={OUTPUT_NON_DETECTIONS}",
+              "--src=hdfs:///user/hadoop/non_detections/"
+            ]
+          }
+        }
+      ],
+      "Applications": [{ "Name": "Hadoop" }, { "Name": "Spark" }],
+      "BootstrapActions": [
+        {
+          "Name": "Install software",
+          "ScriptBootstrapAction": { "Path": "{ BOOTSTRAP_ACTIONS_SCRIPT }" }
+        }
+      ],
+      "JobFlowRole": "EMR_EC2_DefaultRole",
+      "ServiceRole": "EMR_DefaultRole"
+    }
+  },
+  "compute_xmatch_config": {
+    "JOB_FLOW_OVERRIDES": {
+      "Name": "{ CLUSTER_NAME }",
+      "ReleaseLabel": "emr-5.29.0",
+      "LogUri": "s3://alerce-airflow-logs/xmatch_emr",
+      "Configurations": [
+        {
+          "Classification": "spark-defaults",
+          "Properties": {
+            "spark.jars": "/tmp/minimal_astroide.jar,/tmp/healpix-1.0.jar"
+          }
+        }
+      ],
+      "Instances": {
+        "InstanceGroups": [
+          {
+            "Name": "Master node",
+            "Market": "{ GROUP_MARKET }",
+            "InstanceRole": "MASTER",
+            "InstanceType": "{ MASTER_INSTANCE_TYPE }",
+            "InstanceCount": "{ MASTER_INSTANCE_COUNT }"
+          },
+          {
+            "Name": "Compute node",
+            "Market": "{ GROUP_MARKET }",
+            "InstanceRole": "CORE",
+            "InstanceType": "{ CORE_INSTANCE_TYPE }",
+            "InstanceCount": "{ CORE_INSTANCE_COUNT }"
+          }
+        ],
+        "KeepJobFlowAliveWhenNoSteps": "{ KEEP_JOB_FLOW_ALIVE }",
+        "TerminationProtected": "{ TERMINATION_PROTECTED }",
+        "Ec2KeyName": "{ EC2_KEY_NAME }"
+      },
+      "Steps": [
+        {
+          "Name": "Compute Xmatch",
+          "ActionOnFailure": "{ ACTION_ON_FAILURE }",
+          "HadoopJarStep": {
+            "Jar": "command-runner.jar",
+            "Args": [
+              "spark-submit",
+              "--conf",
+              "spark.pyspark.python=/usr/bin/python3.6",
+              "--conf",
+              "spark.jars.packages=org.apache.spark:spark-avro_2.11:2.4.5",
+              "/tmp/batch_processing/main.py",
+              "xmatch",
+              "{ OBJECT_SOURCE_FILES }",
+              "xmatch",
+              "{ CATALOG_SOURCE_FILES }"
+            ]
+          }
+        },
+        {
+          "Name": "Copy xmatch to s3",
+          "ActionOnFailure": "CONTINUE",
+          "HadoopJarStep": {
+            "Jar": "command-runner.jar",
+            "Args": [
+              "s3-dist-cp",
+              "--dest={OUTPUT_FILES}",
+              "--src=hdfs:///user/hadoop/xmatch/"
+            ]
+          }
+        }
+      ],
+      "Applications": [{ "Name": "Hadoop" }, { "Name": "Spark" }],
+      "BootstrapActions": [
+        {
+          "Name": "Install software",
+          "ScriptBootstrapAction": { "Path": "{ BOOTSTRAP_ACTIONS_SCRIPT }" }
+        }
+      ],
+      "JobFlowRole": "EMR_EC2_DefaultRole",
+      "ServiceRole": "EMR_DefaultRole"
+    }
   },
   "load_psql_config": {
     "spark.driver.memory": "",
@@ -46,6 +197,7 @@
       "dataquality": "",
       "gaia_ztf": "",
       "xmatch": "",
+      "allwise": "",
       "probability": "",
       "feature": ""
     },
@@ -59,6 +211,7 @@
       "reference": "",
       "dataquality": "",
       "xmatch": "",
+      "allwise": "",
       "probability": "",
       "feature": "",
       "gaia_ztf": ""
