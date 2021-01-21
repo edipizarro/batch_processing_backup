@@ -62,6 +62,7 @@ class PS1TableData(TableData):
             .drop("count1")
             .drop("count2")
             .drop("count3")
+            .dropDuplicates(["oid", "candid"])
         )
 
         return gr_ps1
