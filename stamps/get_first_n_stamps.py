@@ -41,25 +41,29 @@ def get_stamps(input_path, output_path, jd, nstamps, batch_size, loglevel):
     # CONFIG
     conf = SparkConf()
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
+    sc = spark.sparkContext
 
     # read from bucket
-    candids = spark.read.format("avro").load(input_path).select("objectId", "candid", "candidate.jd")
-    candids = candids.dropDuplicates((['objectId', 'candid']))
+    all_data = spark.read.format("avro").load(input_path)
+    candids = all_data.select("objectId", "candid", "candidate.jd").dropDuplicates((['objectId', 'candid']))
 
     w = Window.partitionBy("objectId").orderBy("jd")
-    candids = candids.withColumn("rownum", row_number().over(w)).where(col("rownum") <= nstamps).drop("rownum")
-    candids = candids.filter(col("jd") >= jd)
+    candids = candids.withColumn("rownum", row_number().over(w)).where(col("rownum") <= nstamps).drop("rownum").filter(
+        col("jd") >= jd)
 
-    data = spark.read.format("avro").load(input_path)
+    candids = [x.candid for x in candids.select('candid').collect()]
+    candids = sc.broadcast(candids)
+
     # select fields
-    selection = data.select(
+    selection = all_data.select(
         "objectId",
         "candidate.*",
         col("cutoutDifference.stampData").alias("cutoutDifference"),
         col("cutoutScience.stampData").alias("cutoutScience"),
         col("cutoutTemplate.stampData").alias("cutoutTemplate")) \
         .withColumnRenamed("objectId", "oid")
-    result = selection.filter(col("candidate.candid").isin(candids["candid"]))
+
+    result = selection.filter(col("candid").isin(candids.value))
 
     # select first n detections
 
