@@ -10,8 +10,8 @@ import os
 @click.option("--jd", "-j", default=58000.0, help="Filter objects by julian dates")
 @click.option("--nstamps", "-n", default=1, help="Number of first n detections")
 @click.option("--partitions", "-p", default=1000, help="Number of partitions")
-@click.option("--save-candids", "-c", default=False, help="Save candids")
-@click.option("--save-stamps", "-s", default=False, help="Save stamps and metadata")
+@click.option("--save-candids", "-c", is_flag=True, help="Save candids")
+@click.option("--save-stamps", "-s", is_flag=True, help="Save stamps and metadata")
 @click.option(
     "--log",
     "loglevel",
