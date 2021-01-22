@@ -6,18 +6,10 @@ from airflow.models.connection import Connection
 from airflow import settings
 
 from urllib.parse import urlparse
-from utils import get_aws_credentials
+from utils import get_aws_credentials, get_tables_to_process
 
 import os
 import json
-
-
-def get_tables_to_process(vars):
-    tables = vars.get("tables").copy()
-    for tb in tables.copy().keys():
-        if tables[tb] == False:
-            del tables[tb]
-    return tables
 
 
 def get_cat_command(vars, table):

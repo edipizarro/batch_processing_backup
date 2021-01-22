@@ -6,6 +6,7 @@ from psql_dag import (
     get_process_csv_tasks,
 )
 from xmatch_dag import get_xmatch_tasks
+from leftraru_dag import get_leftraru_tasks
 from airflow.utils.dates import days_ago
 
 
@@ -68,17 +69,10 @@ xmatch_dag = DAG(
     schedule_interval=None,
 )
 
-# dag = DAG(
-#     "batch_processing",
-#     default_args=default_args,
-#     description="batch process ztf historic data",
-#     start_date=days_ago(2),
-#     schedule_interval=None,
-# )
-#
 
 partition_tasks = get_emr_tasks(partition_dets_ndets_dag)
 create_csv_tasks = get_create_csv_tasks(create_csv_dag)
 psql_copy_csv_tasks = get_psql_copy_csv_tasks(psql_copy_csv_dag)
 process_csv_tasks = get_process_csv_tasks(psql_create_and_copy_csv_dag)
 xmatch_tasks = get_xmatch_tasks(xmatch_dag)
+leftraru_tasks = get_leftraru_tasks(leftraru_jobs_dag)

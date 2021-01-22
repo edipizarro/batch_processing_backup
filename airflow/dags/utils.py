@@ -14,3 +14,10 @@ def get_aws_credentials():
     secret_access_key = credentials[1][:-1]
     return access_key, secret_access_key
 
+
+def get_tables_to_process(vars):
+    tables = vars.get("tables").copy()
+    for tb in tables.copy().keys():
+        if tables[tb] == False:
+            del tables[tb]
+    return tables
