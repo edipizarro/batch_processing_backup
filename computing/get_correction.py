@@ -68,7 +68,9 @@ def get_correction(
     del detections["jd"]
 
     logging.info("Grouping objects and doing correction")
-    correction_df = detections.groupby(["objectId", "fid"]).apply(apply_correction_df, calculate_dubious=True)
+    correction_df = detections.groupby(["objectId", "fid"]).apply(
+        apply_correction_df, calculate_dubious=True
+    )
     correction_df.reset_index(inplace=True)
     del detections
 
@@ -78,7 +80,7 @@ def get_correction(
     logging.info(f"Writing output in {output_dir}")
     if not os.path.exists(os.path.join(output_dir)):
         os.mkdir(output_dir)
-    output_name = os.path.join(output_dir, f"detections_corrected_{partition}.parquet")
+    output_name = os.path.join(output_dir, f"detections_{partition}.parquet")
 
     correction_df.to_parquet(output_name)
 

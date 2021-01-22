@@ -1,10 +1,53 @@
 {
   "leftraru_config": {
-    "partitions": "",
-    "detections_uri": "",
-    "non_detections_uri": "",
-    "detections_pattern": "",
-    "non_detections_pattern": ""
+    "tables": {
+      "detection": true,
+      "non_detection": false,
+      "object": false,
+      "magstat": false,
+      "probability": false,
+      "feature": false
+    },
+    "partitions": {
+      "detection": "",
+      "non_detection": "",
+      "object": "",
+      "magstat": "",
+      "probability": "",
+      "feature": ""
+    },
+    "sources": {
+      "detection": "",
+      "non_detection": "",
+      "object": "",
+      "magstat": "",
+      "probability": "",
+      "feature": ""
+    },
+    "outputs": {
+      "detection": "",
+      "non_detection": "",
+      "object": "",
+      "magstat": "",
+      "probability": "",
+      "feature": ""
+    },
+    "input_patterns": {
+      "detection": "",
+      "non_detection": "",
+      "object": "",
+      "magstat": "",
+      "probability": "",
+      "feature": ""
+    },
+    "log_dirs": {
+      "detection": "",
+      "non_detection": "",
+      "object": "",
+      "magstat": "",
+      "probability": "",
+      "feature": ""
+    }
   },
   "partition_dets_ndets_config": {
     "JOB_FLOW_OVERRIDES": {

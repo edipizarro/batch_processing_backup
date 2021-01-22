@@ -12,8 +12,8 @@ source ~/venvs/env/bin/activate
 
 input=$1
 format=$2
-resources='/home/apps/astro/alercebroker/resources/'
-output='/home/apps/astro/alercebroker/historic_data/'
+resources=$3
+output=$4
 
 export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
 export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
