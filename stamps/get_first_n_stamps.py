@@ -11,7 +11,7 @@ import os
 @click.option("--nstamps", "-n", default=1, help="Number of first n detections")
 @click.option("--partitions", "-p", default=1000, help="Number of partitions")
 @click.option("--save-candids", "-c", default=False, help="Save candids")
-@click.option("--save-stamps", "-a", default=False, help="Save stamps and metadata")
+@click.option("--save-stamps", "-s", default=False, help="Save stamps and metadata")
 @click.option(
     "--log",
     "loglevel",
