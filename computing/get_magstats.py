@@ -64,7 +64,9 @@ def main(
     monitor(logs_dir, f"corrected_{partition}_{node_id}_{job_id}", log=True, plot=False)
 
     logging.info("Getting magnitude stats")
-    magstats = detections.groupby(["objectId", "fid"]).apply(apply_mag_stats, flags=True)
+    magstats = detections.groupby(["objectId", "fid"]).apply(
+        apply_mag_stats, flags=True
+    )
     magstats.reset_index(inplace=True)
 
     logging.info("Getting object table")
@@ -92,7 +94,7 @@ def main(
     logging.info("Joining magstats and dm/dt")
     magstats = magstats.join(dd, on=["objectId", "fid"])
     logging.info("Writing magstats")
-    magstats.to_parquet(os.path.join(output_dir, f"magstats_{partition}.parquet"))
+    magstats.to_parquet(os.path.join(output_dir, f"magstat_{partition}.parquet"))
 
 
 if __name__ == "__main__":

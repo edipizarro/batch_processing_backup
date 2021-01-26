@@ -21,9 +21,10 @@ def get_leftraru_tasks(dag):
 
     for i, table in enumerate(tables):
         partitions = leftraru_compute_vars["partitions"][table]
-        input_bucket = leftraru_compute_vars["inputs"][table]
+        input_parquets = leftraru_compute_vars["inputs"][table]
         input_pattern = leftraru_compute_vars["input_patterns"][table]
-        output_dir = leftraru_compute_vars["outputs"][table]
+        local_output_dir = leftraru_compute_vars["local_outputs"][table]
+        s3_output_dir = leftraru_compute_vars["s3_outputs"][table]
         log_dir = leftraru_compute_vars["log_dirs"][table]
 
         execute = SSHOperator(
@@ -35,15 +36,14 @@ def get_leftraru_tasks(dag):
                 "AWS_SECRET_ACCESS_KEY": aws_secret_access_key,
             },
             params={
-                "output_dir": output_dir,
+                "output_dir": local_output_dir,
                 "aws_access_key": aws_access_key,
                 "aws_secret_access_key": aws_secret_access_key,
                 "partitions": partitions,
-                "script_name": f"{table}.slurm",
-                "input_parquet": input_bucket,
+                "script_name": table,
+                "input_parquet": input_parquets,
                 "input_pattern": input_pattern,
                 "log_dir": log_dir,
-                "output_dir": output_dir,
             },
             do_xcom_push=True,
             dag=dag,
@@ -53,6 +53,39 @@ def get_leftraru_tasks(dag):
             task_id=f"check_{table}_files_created",
             ssh_conn_id="leftraru_connection",
             command="leftraru_check_job.sh",
+            params={
+                "table": table,
+            },
             dag=dag,
         )
-        execute >> sensor
+
+        s3_upload = SSHOperator(
+            task_id=f"upload_{table}_to_s3",
+            ssh_conn_id="leftraru_connection",
+            command="leftraru_run_job.sh",
+            environment={
+                "AWS_ACCESS_KEY_ID": aws_access_key,
+                "AWS_SECRET_ACCESS_KEY": aws_secret_access_key,
+            },
+            params={
+                "output_dir": s3_output_dir,
+                "aws_access_key": aws_access_key,
+                "aws_secret_access_key": aws_secret_access_key,
+                "partitions": partitions,
+                "script_name": "upload_s3",
+                "input_parquet": local_output_dir,
+                "input_pattern": table,
+                "log_dir": log_dir,
+            },
+            do_xcom_push=True,
+            dag=dag,
+        )
+
+        sensor_s3 = SSHCommandSensor(
+            task_id=f"check_{table}_files_uploaded",
+            ssh_conn_id="leftraru_connection",
+            command="leftraru_check_job.sh",
+            dag=dag,
+        )
+
+        execute >> sensor >> s3_upload >> sensor_s3
