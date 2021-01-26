@@ -1,13 +1,17 @@
 import time
 import click
 import logging
-
+import math
+import os
 
 @click.command()
 @click.argument("input_path", type=str)
 @click.argument("output_path", type=str)
 @click.option("--jd", "-j", default=58000.0, help="Filter objects by julian dates")
 @click.option("--nstamps", "-n", default=1, help="Number of first n detections")
+@click.option("--partitions", "-p", default=1000, help="Number of partitions")
+@click.option("--save-candids", "-c", is_flag=True, help="Save candids")
+@click.option("--save-stamps", "-s", is_flag=True, help="Save stamps and metadata")
 @click.option(
     "--log",
     "loglevel",
@@ -15,7 +19,7 @@ import logging
     help="log level to use",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
-def get_stamps(input_path, output_path, jd, nstamps, loglevel):
+def get_stamps(input_path, output_path, jd, nstamps, partitions, save_candids, save_stamps, loglevel):
     """
     Get first n-stamps given a list of oids
 
@@ -40,27 +44,35 @@ def get_stamps(input_path, output_path, jd, nstamps, loglevel):
     # CONFIG
     conf = SparkConf()
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
+    sc = spark.sparkContext
 
     # read from bucket
-    ztf = spark.read.format("avro").load(input_path)
+    all_data = spark.read.format("avro").load(input_path)
+    candids = all_data.select("objectId", "candid", "candidate.jd").dropDuplicates((['objectId', 'candid']))
 
-    # select fields
-    selection = ztf.select(
-        "objectId",
-        "candidate.*",
-        col("cutoutDifference.stampData").alias("cutoutDifference"),
-        col("cutoutScience.stampData").alias("cutoutScience"),
-        col("cutoutTemplate.stampData").alias("cutoutTemplate")) \
-        .withColumnRenamed("objectId", "oid")
-    selection = selection.dropDuplicates((['oid', 'candid']))
+    w = Window.partitionBy("objectId").orderBy("jd")
+    candids = candids.withColumn("rownum", row_number().over(w)).where(col("rownum") <= nstamps).drop("rownum").filter(
+        col("jd") >= jd)
 
-    # select first n detections
-    w = Window.partitionBy("oid").orderBy("jd")
-    result = selection.withColumn("rownum", row_number().over(w)) \
-        .where(col("rownum") <= nstamps) \
-        .drop("rownum")
-    result = result.filter(col("jd") >= jd)
-    result.write.save(output_path)
+    if save_candids:
+       candids.repartition(partitions).write.save(os.path.join(output_path, "candids"))
+
+    if save_stamps:
+        candids = [x.candid for x in candids.select('candid').collect()]
+        candids = sc.broadcast(candids)
+
+        selection = all_data.filter(col("candid").isin(candids.value))
+
+        # select fields
+        result = selection.select(
+            "objectId",
+            "candidate.*",
+            col("cutoutDifference.stampData").alias("cutoutDifference"),
+            col("cutoutScience.stampData").alias("cutoutScience"),
+            col("cutoutTemplate.stampData").alias("cutoutTemplate")) \
+            .withColumnRenamed("objectId", "oid")
+
+        result.repartition(partitions).write.save(os.path.join(output_path, "stamps"))
     total = time.time() - start
     logging.info("TOTAL_TIME=%s" % (str(total)))
     return
