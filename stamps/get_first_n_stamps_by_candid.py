@@ -42,10 +42,12 @@ def get_stamps_by_candid(input_path, output_path, candids_file_path, loglevel):
     # CONFIG
     conf = SparkConf()
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
+    sc = spark.sparkContext
 
     candids = pd.read_csv(candids_file_path)
     candids = candids["candid"].values.astype(int)
     candids = [int(x) for x in candids]
+    candids = sc.broadcast(candids)
 
     logging.info("Candids read")
 
