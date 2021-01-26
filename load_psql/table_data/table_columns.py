@@ -200,3 +200,11 @@ allwise_col = [
 ]
 
 fea_col = ["oid", "name", "value", "fid", "version"]
+probabiliy_col = [
+    "oid",
+    "classifier_name",
+    "classifier_version",
+    "class_name",
+    "probability",
+    "ranking",
+]
