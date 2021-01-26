@@ -2,48 +2,42 @@
   "leftraru_config": {
     "tables": {
       "detection": true,
-      "non_detection": false,
-      "object": false,
       "magstat": false,
       "probability": false,
       "feature": false
     },
     "partitions": {
       "detection": "",
-      "non_detection": "",
-      "object": "",
       "magstat": "",
       "probability": "",
       "feature": ""
     },
     "sources": {
       "detection": "",
-      "non_detection": "",
-      "object": "",
       "magstat": "",
       "probability": "",
       "feature": ""
     },
-    "outputs": {
+    "local_outputs": {
       "detection": "",
-      "non_detection": "",
-      "object": "",
+      "magstat": "",
+      "probability": "",
+      "feature": ""
+    },
+    "s3_outputs": {
+      "detection": "",
       "magstat": "",
       "probability": "",
       "feature": ""
     },
     "input_patterns": {
       "detection": "",
-      "non_detection": "",
-      "object": "",
       "magstat": "",
       "probability": "",
       "feature": ""
     },
     "log_dirs": {
       "detection": "",
-      "non_detection": "",
-      "object": "",
       "magstat": "",
       "probability": "",
       "feature": ""
@@ -213,6 +207,7 @@
   "load_psql_config": {
     "spark.driver.memory": "",
     "spark.local.dir": "",
+    "virtualenv": "",
     "db": {
       "dbname": "",
       "user": "",
@@ -240,7 +235,7 @@
       "detection": "",
       "non_detection": "",
       "object": "",
-      "magstats": "",
+      "magstat": "",
       "ps1_ztf": "",
       "ss_ztf": "",
       "reference": "",
@@ -255,7 +250,7 @@
       "detection": "",
       "non_detection": "",
       "object": "",
-      "magstats": "",
+      "magstat": "",
       "ps1_ztf": "",
       "ss_ztf": "",
       "reference": "",

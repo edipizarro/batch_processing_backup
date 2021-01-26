@@ -12,8 +12,9 @@ ml Python/3.7.2
 source ~/venvs/env/bin/activate
 
 input_dir=$1
-output_dir=$2
-pattern=$3
+pattern=$2
+log_dir=$3
+output_dir=$4
 
 export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
 export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
