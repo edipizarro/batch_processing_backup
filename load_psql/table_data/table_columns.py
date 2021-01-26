@@ -198,3 +198,5 @@ allwise_col = [
     "h_msig_2mass",
     "k_msig_2mass",
 ]
+
+fea_col = ["oid", "name", "value", "fid", "version"]
