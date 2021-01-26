@@ -47,10 +47,12 @@ def get_stamps_by_candid(input_path, output_path, candids_file_path, loglevel):
     candids = candids["candid"].values.astype(int)
     candids = [int(x) for x in candids]
 
+    logging.info("Candids read")
+
     # read from bucket
     ztf = spark.read.format("avro").load(input_path)
-    ztf = ztf.filter(col("candid").isin(candids))
-
+    ztf = ztf.filter(col("candid").isin(candids)).cache()
+    logging.info("Filtering data")
     # select fields
     selection = ztf.select(
         "objectId",
@@ -59,12 +61,9 @@ def get_stamps_by_candid(input_path, output_path, candids_file_path, loglevel):
         col("cutoutScience.stampData").alias("cutoutScience"),
         col("cutoutTemplate.stampData").alias("cutoutTemplate")) \
         .withColumnRenamed("objectId", "oid")
-
-    selection = selection.dropDuplicates((['oid', 'candid']))
-
+    logging.info("Selection done")
     selection.write.save(output_path)
-    total = time.time() - start
-    logging.info("TOTAL_TIME=%s" % (str(total)))
+    logging.info(f"TOTAL_TIME = {time.time() - start}")
     return
 
 
