@@ -198,3 +198,12 @@ allwise_col = [
     "h_msig_2mass",
     "k_msig_2mass",
 ]
+
+probabiliy_col = [
+    "oid",
+    "classifier_name",
+    "classifier_version",
+    "class_name",
+    "probability",
+    "ranking"
+]
