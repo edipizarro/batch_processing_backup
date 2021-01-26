@@ -68,4 +68,4 @@ class FeatureTableData(TableData):
             )
         )
 
-        sel_fea = df_fea.select(*column_list)
+        return df_fea.select(*column_list)
