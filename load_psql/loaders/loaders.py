@@ -11,6 +11,7 @@ from load_psql.table_data import (
     ReferenceTableData,
     AllwiseTableData,
     XmatchTableData,
+    FeatureTableData,
 )
 from pyspark.sql import SparkSession, DataFrame
 import glob
@@ -142,3 +143,10 @@ class XmatchCSVLoader(CSVLoader):
         self, spark_session: SparkSession, source: str, read_args: dict
     ):
         return XmatchTableData(spark_session, source, read_args)
+
+
+class FeatureCSVLoader(CSVLoader):
+    def create_table_data(
+        self, spark_session: SparkSession, source: str, read_args: dict
+    ):
+        return FeatureTableData(spark_session, source, read_args)
