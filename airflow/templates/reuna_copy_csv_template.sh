@@ -1,5 +1,5 @@
-cd batch_proccessing
-{% if {{params.virtualenv}} -%}
+cd batch_processing
+{% if params.virtualenv %}
 conda activate {{params.virtualenv}}
 {% endif %}
-python main.py psql-copy-csv --config_json='{{params.vars}}' &
+nohup python main.py psql-copy-csv --config_json='{{params.vars}}' &
