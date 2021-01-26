@@ -53,7 +53,7 @@ def get_stamps_by_candid(input_path, output_path, candids_file_path, loglevel):
 
     # read from bucket
     ztf = spark.read.format("avro").load(input_path)
-    ztf = ztf.filter(col("candid").isin(candids)).cache()
+    ztf = ztf.filter(col("candid").isin(candids.value)).cache()
     logging.info("Filtering data")
     # select fields
     selection = ztf.select(
