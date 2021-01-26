@@ -10,3 +10,4 @@ from .gaia import GaiaTableData
 from .reference import ReferenceTableData
 from .xmatch import XmatchTableData
 from .allwise import AllwiseTableData
+from .feature import FeatureTableData

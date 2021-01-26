@@ -199,11 +199,12 @@ allwise_col = [
     "k_msig_2mass",
 ]
 
+fea_col = ["oid", "name", "value", "fid", "version"]
 probabiliy_col = [
     "oid",
     "classifier_name",
     "classifier_version",
     "class_name",
     "probability",
-    "ranking"
+    "ranking",
 ]

@@ -163,6 +163,7 @@
   "load_psql_config": {
     "spark.driver.memory": "",
     "spark.local.dir": "",
+    "feature_version": "",
     "db": {
       "dbname": "",
       "user": "",
