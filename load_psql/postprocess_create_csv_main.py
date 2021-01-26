@@ -10,6 +10,7 @@ from load_psql.loaders import (
     DataQualityCSVLoader,
     XmatchCSVLoader,
     AllwiseCSVLoader,
+    FeatureCSVLoader,
 )
 from load_psql.table_data.table_columns import (
     det_col,
@@ -23,6 +24,7 @@ from load_psql.table_data.table_columns import (
     ref_col,
     xmatch_col,
     allwise_col,
+    fea_col,
 )
 
 from pyspark.sql import SparkSession, Window
@@ -275,7 +277,17 @@ def process_csv(
     if config["tables"]["probability"]:
         pass
     if config["tables"]["feature"]:
-        pass
+        version = config.get("feature_version", "-")
+        loader_create_csv(
+            FeatureCSVLoader,
+            "feature",
+            config,
+            spark,
+            default_args,
+            fea_col.copy(),
+            version=version,
+        )
+        loader_load_csv(FeatureCSVLoader, "feature", config)
 
 
 @click.command()
@@ -415,7 +427,16 @@ def create_csv(config_file, config_json, loglevel):
     if config["tables"]["probability"]:
         pass
     if config["tables"]["feature"]:
-        pass
+        version = config.get("feature_version", "-")
+        loader_create_csv(
+            FeatureCSVLoader,
+            "feature",
+            config,
+            spark,
+            default_args,
+            fea_col.copy(),
+            version=version,
+        )
 
 
 @click.command()
@@ -479,4 +500,4 @@ def psql_copy_csv(
     if config["tables"]["probability"]:
         pass
     if config["tables"]["feature"]:
-        pass
+        loader_load_csv(FeatureCSVLoader, "feature", config)
