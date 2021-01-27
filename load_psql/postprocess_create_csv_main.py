@@ -11,6 +11,7 @@ from load_psql.loaders import (
     XmatchCSVLoader,
     AllwiseCSVLoader,
     FeatureCSVLoader,
+    ProbabilityCSVLoader
 )
 from load_psql.table_data.table_columns import (
     det_col,
@@ -25,6 +26,7 @@ from load_psql.table_data.table_columns import (
     xmatch_col,
     allwise_col,
     fea_col,
+    probabiliy_col
 )
 
 from pyspark.sql import SparkSession, Window
@@ -111,7 +113,6 @@ def loader_create_csv(
         **kwargs,
     )
 
-
 def loader_load_csv(Loader, table_name, config):
     Loader.psql_load_csv(config["outputs"][table_name], config["db"], table_name)
 
@@ -170,7 +171,10 @@ def process_csv(
     tt_det = get_tt_det(
         spark, config["sources"]["detection"], config["sources"]["raw_detection"]
     )
+
+    classifier_version = config.get("classifier_version", {})
     step_id = "bulk_1.0.0"
+
     obj_cid_window = Window.partitionBy("objectId").orderBy("candid")
     if config["tables"]["detection"]:
         loader_create_csv(
@@ -330,6 +334,8 @@ def create_csv(config_file, config_json, loglevel):
         spark, config["sources"]["detection"], config["sources"]["raw_detection"]
     )
     step_id = "bulk_1.0.0"
+    classifier_version = config.get("classifier_version", {})
+
     obj_cid_window = Window.partitionBy("objectId").orderBy("candid")
     if config["tables"]["detection"]:
         loader_create_csv(
@@ -424,8 +430,19 @@ def create_csv(config_file, config_json, loglevel):
             AllwiseCSVLoader, "allwise", config, spark, default_args, allwise_col.copy()
         )
 
-    if config["tables"]["probability"]:
-        pass
+    for table in ["lc_classifier", "lc_classifier_top", "lc_classifier_stochastic", "lc_classifier_transient", "lc_classifier_periodic"]:
+        if config["tables"][table]:
+            loader_create_csv(
+               ProbabilityCSVLoader, 
+               table, 
+               config, 
+               spark, 
+               default_args, 
+               probabiliy_col.copy(),  
+               version=classifier_version.get(table, step_id), 
+               classifier_name=table
+            )
+
     if config["tables"]["feature"]:
         version = config.get("feature_version", "-")
         loader_create_csv(
@@ -472,7 +489,6 @@ def psql_copy_csv(
     valid, message = validate_config(config)
     if not valid:
         raise Exception(message)
-    default_args = {}
 
     if config["tables"]["detection"]:
         loader_load_csv(DetectionsCSVLoader, "detection", config)
@@ -482,7 +498,6 @@ def psql_copy_csv(
         loader_load_csv(NonDetectionsCSVLoader, "non_detection", config)
     if config["tables"]["ss_ztf"]:
         loader_load_csv(SSCSVLoader, "ss_ztf", config)
-
     if config["tables"]["magstat"]:
         loader_load_csv(MagstatsCSVLoader, "magstat", config)
     if config["tables"]["ps1_ztf"]:

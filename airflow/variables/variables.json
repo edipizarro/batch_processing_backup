@@ -181,10 +181,14 @@
       "reference": false,
       "dataquality": false,
       "xmatch": false,
-      "probability": false,
       "feature": false,
       "gaia_ztf": true,
-      "allwise": false
+      "allwise": false,
+      "lc_classifier": false,
+      "lc_classifier_top": false,
+      "lc_classifier_stochastic": false,
+      "lc_classifier_transient": false,
+      "lc_classifier_periodic": false
     },
     "sources": {
       "raw_detection": "",
@@ -199,8 +203,12 @@
       "gaia_ztf": "",
       "xmatch": "",
       "allwise": "",
-      "probability": "",
-      "feature": ""
+      "feature": "",
+      "lc_classifier": "",
+      "lc_classifier_top": "",
+      "lc_classifier_stochastic": "",
+      "lc_classifier_transient": "",
+      "lc_classifier_periodic": ""
     },
     "outputs": {
       "detection": "",
@@ -213,9 +221,13 @@
       "dataquality": "",
       "xmatch": "",
       "allwise": "",
-      "probability": "",
       "feature": "",
-      "gaia_ztf": ""
+      "gaia_ztf": "",
+      "lc_classifier": "",
+      "lc_classifier_top": "",
+      "lc_classifier_stochastic": "",
+      "lc_classifier_transient": "",
+      "lc_classifier_periodic": ""
     },
     "csv_loader_config": {
       "n_partitions": 16,

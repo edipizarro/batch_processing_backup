@@ -12,6 +12,7 @@ from load_psql.table_data import (
     AllwiseTableData,
     XmatchTableData,
     FeatureTableData,
+    ProbabilityTableData
 )
 from pyspark.sql import SparkSession, DataFrame
 import glob
@@ -150,3 +151,9 @@ class FeatureCSVLoader(CSVLoader):
         self, spark_session: SparkSession, source: str, read_args: dict
     ):
         return FeatureTableData(spark_session, source, read_args)
+
+class ProbabilityCSVLoader(CSVLoader):
+    def create_table_data(
+        self, spark_session: SparkSession, source: str, read_args: dict
+    ):
+        return ProbabilityTableData(spark_session, source, read_args)

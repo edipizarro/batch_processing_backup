@@ -2,10 +2,6 @@ from .generic import TableData
 from pyspark.sql.functions import col, lit
 from pyspark.sql.types import StringType
 
-
-# oid, catid, oid_catalog,dist
-
-
 class XmatchTableData(TableData):
     def select(self, column_list: list):
         column_list.remove("objectId_2")
