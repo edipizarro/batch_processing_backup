@@ -516,3 +516,11 @@ def psql_copy_csv(
         pass
     if config["tables"]["feature"]:
         loader_load_csv(FeatureCSVLoader, "feature", config)
+    
+    for table in ["lc_classifier", "lc_classifier_top", "lc_classifier_stochastic", "lc_classifier_transient", "lc_classifier_periodic"]:
+        if config["tables"][table]:
+            loader_load_csv(
+               ProbabilityCSVLoader, 
+               table, 
+               config 
+            )
