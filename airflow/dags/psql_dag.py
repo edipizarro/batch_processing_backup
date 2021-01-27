@@ -94,9 +94,9 @@ def get_psql_copy_csv_tasks(dag):
             task_id=f"count_sql_tuples_{table}",
             conn_id="ztf_db",
             sql="sql_count_command.sql",
-            parameters={"table": table},
+            params={"table": table, "task_name": f"count_csv_tuples_{table}"},
             fail_on_empty=False,
-            timeout=60 * 60 * 10,
+            timeout=60 * 60,
             dag=dag,
         )
         sql_count_tasks.append(count_psql_tuples)
@@ -143,7 +143,7 @@ def get_process_csv_tasks(dag):
             sql="sql_count_command.sql",
             parameters={"table": table},
             fail_on_empty=False,
-            timeout=60 * 60 * 10,
+            timeout=60 * 60,
             dag=dag,
         )
         create_csv_sensor >> count_csv_tuples >> count_psql_tuples
