@@ -188,7 +188,8 @@
       "lc_classifier_top": false,
       "lc_classifier_stochastic": false,
       "lc_classifier_transient": false,
-      "lc_classifier_periodic": false
+      "lc_classifier_periodic": false,
+      "stamp_classifier": false
     },
     "sources": {
       "raw_detection": "",
@@ -208,7 +209,8 @@
       "lc_classifier_top": "",
       "lc_classifier_stochastic": "",
       "lc_classifier_transient": "",
-      "lc_classifier_periodic": ""
+      "lc_classifier_periodic": "",
+      "stamp_classifier": ""
     },
     "outputs": {
       "detection": "",
@@ -227,7 +229,8 @@
       "lc_classifier_top": "",
       "lc_classifier_stochastic": "",
       "lc_classifier_transient": "",
-      "lc_classifier_periodic": ""
+      "lc_classifier_periodic": "",
+      "stamp_classifier": ""
     },
     "csv_loader_config": {
       "n_partitions": 16,
