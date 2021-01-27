@@ -430,7 +430,7 @@ def create_csv(config_file, config_json, loglevel):
             AllwiseCSVLoader, "allwise", config, spark, default_args, allwise_col.copy()
         )
 
-    for table in ["lc_classifier", "lc_classifier_top", "lc_classifier_stochastic", "lc_classifier_transient", "lc_classifier_periodic"]:
+    for table in ["lc_classifier", "lc_classifier_top", "lc_classifier_stochastic", "lc_classifier_transient", "lc_classifier_periodic", "stamp_classifier"]:
         if config["tables"][table]:
             loader_create_csv(
                ProbabilityCSVLoader, 
@@ -517,7 +517,7 @@ def psql_copy_csv(
     if config["tables"]["feature"]:
         loader_load_csv(FeatureCSVLoader, "feature", config)
     
-    for table in ["lc_classifier", "lc_classifier_top", "lc_classifier_stochastic", "lc_classifier_transient", "lc_classifier_periodic"]:
+    for table in ["lc_classifier", "lc_classifier_top", "lc_classifier_stochastic", "lc_classifier_transient", "lc_classifier_periodic", "stamp_classifier"]:
         if config["tables"][table]:
             loader_load_csv(
                ProbabilityCSVLoader, 
