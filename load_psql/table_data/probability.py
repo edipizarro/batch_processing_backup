@@ -21,4 +21,4 @@ class ProbabilityTableData(TableData):
         df = df.withColumn("ranking", dense_rank().over(Window.partitionBy("oid").orderBy(desc("probability"))))
         df = df.drop("key").drop("value")
         sel_prob = df.select(column_list)
-        return sel_prop
+        return sel_prob
