@@ -12,4 +12,5 @@ from .loaders import (
     AllwiseCSVLoader,
     XmatchCSVLoader,
     FeatureCSVLoader,
+    ProbabilityCSVLoader
 )
