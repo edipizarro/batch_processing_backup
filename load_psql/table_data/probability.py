@@ -5,7 +5,7 @@ from pyspark.sql import Window
 class ProbabilityTableData(TableData):
     def select(self, column_list, version, classifier_name):
         cols_p = [
-                c for (c, t) in df.dtypes if (c not in ["oid"] and t == 'float')  
+                c for (c, t) in self.dataframe.dtypes if (c not in ["oid"] and t == 'float')  
         ]
         new_cols = explode(array([struct(lit(c).alias("key"), col(c).alias("value")) for c in cols_p])).alias("new_cols")
         df = (
