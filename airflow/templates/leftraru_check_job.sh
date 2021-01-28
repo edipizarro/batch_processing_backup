@@ -1,3 +1,5 @@
-{% set xcom=ti.xcom_pull(task_ids='launch_slurm_script_for_{{params.table}}') %}
+{% set xcom=ti.xcom_pull(task_ids=params.task_name) %}
+
 cd /home/apps/astro/alercebroker/batch_processing/computing/scripts
-bash check_finished.sh {% if xcom %} {{''.join([x for x in xcom.strip().decode() if str.isdigit(x)])}} {% endif %}
+JOBID=$(echo "{{xcom.strip().decode()}}" | tr -dc '0-9')
+bash check_finished.sh $JOBID
