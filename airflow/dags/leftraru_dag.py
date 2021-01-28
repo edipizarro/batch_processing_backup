@@ -36,6 +36,7 @@ def get_leftraru_tasks(dag):
                 "AWS_SECRET_ACCESS_KEY": aws_secret_access_key,
             },
             params={
+                "rm": True,
                 "output_dir": local_output_dir,
                 "aws_access_key": aws_access_key,
                 "aws_secret_access_key": aws_secret_access_key,
@@ -53,9 +54,7 @@ def get_leftraru_tasks(dag):
             task_id=f"check_{table}_files_created",
             ssh_conn_id="leftraru_connection",
             command="leftraru_check_job.sh",
-            params={
-                "table": table,
-            },
+            params={"table": table, "task_name": f"launch_slurm_script_for_{table}"},
             dag=dag,
         )
 
@@ -68,6 +67,7 @@ def get_leftraru_tasks(dag):
                 "AWS_SECRET_ACCESS_KEY": aws_secret_access_key,
             },
             params={
+                "rm": False,
                 "output_dir": s3_output_dir,
                 "aws_access_key": aws_access_key,
                 "aws_secret_access_key": aws_secret_access_key,
@@ -81,11 +81,12 @@ def get_leftraru_tasks(dag):
             dag=dag,
         )
 
-        sensor_s3 = SSHCommandSensor(
+        sensor_s3_upload_finish = SSHCommandSensor(
             task_id=f"check_{table}_files_uploaded",
             ssh_conn_id="leftraru_connection",
             command="leftraru_check_job.sh",
+            params={"task_name": f"upload_{table}_to_s3"},
             dag=dag,
         )
 
-        execute >> sensor >> s3_upload >> sensor_s3
+        execute >> sensor >> s3_upload >> sensor_s3_upload_finish
