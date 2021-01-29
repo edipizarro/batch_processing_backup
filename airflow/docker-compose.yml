@@ -16,6 +16,7 @@ services:
     environment:
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__FERNET_KEY=${FERNET_KEY}
     volumes:
       - ./logs:/opt/airflow/logs
       - ./scripts:/opt/airflow/scripts
@@ -29,16 +30,17 @@ services:
     environment:
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__FERNET_KEY=your_fernet_key
+      - AIRFLOW__CORE__FERNET_KEY=${FERNET_KEY}
       - AIRFLOW__CORE__ENABLE_XCOM_PICKLING=True
-      - AIRFLOW_CONN_AWS_DEFAULT=aws://acess_key_id:secret_access_key@
-      - AWS_DEFAULT_REGION=us-east-1
-      - ADMIN_USER=admin
-      - ADMIN_PASSWORD=admin
+      - ADMIN_USER=${ADMIN_USER}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
     volumes:
       - ./logs:/opt/airflow/logs
       - ./scripts:/opt/airflow/scripts
       - ./variables:/opt/airflow/variables
+      - ./plugins:/opt/airflow/plugins
+      - ./templates:/opt/airflow/templates
+      - /path_to_pem/id_rsa:/opt/airflow/leftraru_rsa
     ports:
       - "8080:8080"
 
@@ -51,11 +53,12 @@ services:
     environment:
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__FERNET_KEY=your_fernet_key
+      - AIRFLOW__CORE__FERNET_KEY=${FERNET_KEY}
       - AIRFLOW__CORE__ENABLE_XCOM_PICKLING=True
-      - AIRFLOW_CONN_AWS_DEFAULT=aws://acess_key_id:secret_access_key@
-      - AWS_DEFAULT_REGION=us-east-1
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./scripts:/opt/airflow/scripts
+      - ./plugins:/opt/airflow/plugins
+      - ./templates:/opt/airflow/templates
+      - /path_to_pem/id_rsa:/opt/airflow/leftraru_rsa
