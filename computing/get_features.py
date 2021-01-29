@@ -26,16 +26,16 @@ from lc_classifier.features import CustomHierarchicalExtractor
     help="Parquet file name format. Id number should be replaced with {}",
 )
 def main(
-        corrected_dir,
-        objects_dir,
-        non_det_dir,
-        output_dir,
-        partition,
-        node_id,
-        job_id,
-        logs_dir,
-        version,
-        file_format
+    corrected_dir,
+    objects_dir,
+    non_det_dir,
+    output_dir,
+    partition,
+    node_id,
+    job_id,
+    logs_dir,
+    version,
+    file_format,
 ):
     """
     Correct a set of detections indexed by object id.
@@ -68,7 +68,7 @@ def main(
     logging.info(f"Opening corrected detection file: {detection_file}")
     detections = pd.read_parquet(os.path.join(corrected_dir, detection_file))
     detections.set_index("objectId", inplace=True)
-    detections.index.name = 'oid'
+    detections.index.name = "oid"
     #  detections["magpsf"] = detections["magpsf"].astype(np.float64)
     #  detections["sigmapsf"] = detections["sigmapsf"].astype(np.float64)
 
@@ -76,7 +76,7 @@ def main(
     logging.info(f"Opening object file: {objects_file}")
     objects = pd.read_parquet(os.path.join(objects_dir, objects_file))
     objects.set_index("objectId", inplace=True)
-    objects.index.name = 'oid'
+    objects.index.name = "oid"
 
     rep = str(partition).zfill(5)
     non_det_file = file_format.replace("{}", rep)
@@ -88,7 +88,7 @@ def main(
     non_det["mjd"] = non_det.jd - 2400000.5
     del non_det["jd"]
     non_det.set_index("objectId", inplace=True)
-    non_det.index.name = 'oid'
+    non_det.index.name = "oid"
 
     logging.info(f"Computing features for: {objects.shape[0]} objects")
     extractor = CustomHierarchicalExtractor()
@@ -100,7 +100,7 @@ def main(
 
     features_df.reset_index(inplace=True)
     logging.info(f"Writing output for: {features_df.shape[0]}")
-    features_df.to_parquet(os.path.join(output_dir, f"features_{partition}.parquet"))
+    features_df.to_parquet(os.path.join(output_dir, f"feature_{partition}.parquet"))
 
 
 if __name__ == "__main__":
