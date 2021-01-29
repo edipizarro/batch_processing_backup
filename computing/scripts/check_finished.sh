@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -e
 
 count=$(squeue | grep $1 | wc -l)
 if [ $count -eq 0 ]

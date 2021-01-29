@@ -1,13 +1,13 @@
 from airflow.contrib.operators.ssh_operator import SSHOperator
 from airflow.models import Variable
 from airflow.providers.sftp.sensors.sftp import SFTPSensor
+from airflow.sensors.s3_prefix_sensor import S3PrefixSensor
 from sensors.ssh_command_sensor import SSHCommandSensor
-
-from utils import get_aws_credentials, get_tables_to_process
+from utils import get_aws_credentials, get_tables_to_process, S3Url
 
 
 def get_leftraru_tasks(dag):
-    aws_access_key, aws_secret_access_key = get_aws_credentials()
+    aws_access_key, aws_secret_access_key = get_aws_credentials("aws_connection")
     leftraru_compute_vars = Variable.get(
         "leftraru_compute_config", deserialize_json=True
     )
@@ -26,6 +26,7 @@ def get_leftraru_tasks(dag):
         local_output_dir = leftraru_compute_vars["local_outputs"][table]
         s3_output_dir = leftraru_compute_vars["s3_outputs"][table]
         log_dir = leftraru_compute_vars["log_dirs"][table]
+        s3_url = S3Url(s3_output_dir)
 
         execute = SSHOperator(
             task_id=f"launch_slurm_script_for_{table}",
@@ -89,4 +90,11 @@ def get_leftraru_tasks(dag):
             dag=dag,
         )
 
-        execute >> sensor >> s3_upload >> sensor_s3_upload_finish
+        sensor_s3_files_uploaded = S3PrefixSensor(
+            bucket_name=s3_url.bucket,
+            prefix=s3_url.add_prefix(table + "*"),
+            aws_conn_id="aws_connection",
+            dag=dag,
+        )
+
+        execute >> sensor >> s3_upload >> sensor_s3_upload_finish >> sensor_s3_files_uploaded

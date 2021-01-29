@@ -56,7 +56,7 @@ def main(
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    detection_file = f"detections_corrected_{partition}.parquet"
+    detection_file = f"detection_{partition}.parquet"
     logging.info(f"Opening corrected detection file: {detection_file}")
     detections = pd.read_parquet(os.path.join(corrected_dir, detection_file))
 
