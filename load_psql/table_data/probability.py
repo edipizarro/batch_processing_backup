@@ -10,7 +10,7 @@ class ProbabilityTableData(TableData):
         ]
         new_cols = explode(array([struct(lit(c).alias("key"), col(c).alias("value")) for c in cols_p])).alias("new_cols")
         df = (
-                self.dataframe.select(
+                self.dataframe.dropDuplicates().select(
                     ["oid"] + [new_cols]).select(["oid"] + ["new_cols.key", "new_cols.value"]
                 )
                 .withColumn("classifier_version", lit(version))
