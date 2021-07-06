@@ -42,17 +42,17 @@ def partition_data(
 
     # READ DATA
     # 1) Objects
-    df_objects = spark.read.csv(input_objects)
+    df_objects = spark.read.option(header=True).csv(input_objects)
     df_objects.repartition(n_partitions, "oid").write.format("parquet").bucketBy(n_partitions, "oid").option(
         "path", output_objects).saveAsTable("objects")
 
     # 2) Detections
-    df_detections = spark.read.csv(input_detections)
+    df_detections = spark.read.option(header=True).csv(input_detections)
     df_detections.repartition(n_partitions, "oid").write.format("parquet").bucketBy(n_partitions, "oid").option(
         "path", output_detections).saveAsTable("detections")
 
     # 3) Non detections
-    df_non_detections = spark.read.csv(input_non_detections)
+    df_non_detections = spark.read.option(header=True).csv(input_non_detections)
     df_non_detections.repartition(n_partitions, "oid").write.format("parquet").bucketBy(n_partitions, "oid").option(
         "path", output_non_detections).saveAsTable("non_detections")
 
