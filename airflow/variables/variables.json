@@ -1,5 +1,5 @@
 {
-  "leftraru_config": {
+  "leftraru_compute_config": {
     "tables": {
       "detection": true,
       "magstat": false,

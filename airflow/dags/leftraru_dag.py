@@ -21,7 +21,7 @@ def get_leftraru_tasks(dag):
 
     for i, table in enumerate(tables):
         partitions = leftraru_compute_vars["partitions"][table]
-        input_parquets = leftraru_compute_vars["inputs"][table]
+        input_parquets = leftraru_compute_vars["sources"][table]
         input_pattern = leftraru_compute_vars["input_patterns"][table]
         local_output_dir = leftraru_compute_vars["local_outputs"][table]
         s3_output_dir = leftraru_compute_vars["s3_outputs"][table]
@@ -97,4 +97,10 @@ def get_leftraru_tasks(dag):
             dag=dag,
         )
 
-        execute >> sensor >> s3_upload >> sensor_s3_upload_finish >> sensor_s3_files_uploaded
+        (
+            execute
+            >> sensor
+            >> s3_upload
+            >> sensor_s3_upload_finish
+            >> sensor_s3_files_uploaded
+        )
