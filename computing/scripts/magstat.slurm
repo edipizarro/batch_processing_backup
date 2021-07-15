@@ -20,4 +20,4 @@ output='/home/apps/astro/alercebroker/historic_data/'
 export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
 export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
 
-python3 ../computing/get_magstats.py $input_corrected $input_nondet $output ${SLURM_ARRAY_TASK_ID} ${SLURM_JOB_NODELIST} ${SLURM_ARRAY_JOB_ID} $resources --file-format $format
+python3 ../get_magstats.py $input_corrected $input_nondet $output ${SLURM_ARRAY_TASK_ID} ${SLURM_JOB_NODELIST} ${SLURM_ARRAY_JOB_ID} $resources --file-format $format
