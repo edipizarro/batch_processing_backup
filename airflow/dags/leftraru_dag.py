@@ -7,7 +7,9 @@ from utils import get_aws_credentials, get_tables_to_process, S3Url
 
 
 def get_leftraru_tasks(dag):
-    aws_access_key, aws_secret_access_key = get_aws_credentials("aws_connection")
+    aws_access_key, aws_secret_access_key, aws_session_token = get_aws_credentials(
+        "aws_connection"
+    )
     leftraru_compute_vars = Variable.get(
         "leftraru_compute_config", deserialize_json=True
     )
@@ -35,12 +37,14 @@ def get_leftraru_tasks(dag):
             environment={
                 "AWS_ACCESS_KEY_ID": aws_access_key,
                 "AWS_SECRET_ACCESS_KEY": aws_secret_access_key,
+                "AWS_SESSION_TOKEN": aws_session_token,
             },
             params={
                 "rm": True,
                 "output_dir": local_output_dir,
                 "aws_access_key": aws_access_key,
                 "aws_secret_access_key": aws_secret_access_key,
+                "aws_session_token": aws_session_token,
                 "partitions": partitions,
                 "script_name": table,
                 "input_parquet": input_parquets,
@@ -66,12 +70,14 @@ def get_leftraru_tasks(dag):
             environment={
                 "AWS_ACCESS_KEY_ID": aws_access_key,
                 "AWS_SECRET_ACCESS_KEY": aws_secret_access_key,
+                "AWS_SESSION_TOKEN": aws_session_token,
             },
             params={
                 "rm": False,
                 "output_dir": s3_output_dir,
                 "aws_access_key": aws_access_key,
                 "aws_secret_access_key": aws_secret_access_key,
+                "aws_session_token": aws_session_token,
                 "partitions": partitions,
                 "script_name": "upload_s3",
                 "input_parquet": local_output_dir,
