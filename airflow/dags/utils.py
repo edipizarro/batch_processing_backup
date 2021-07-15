@@ -10,7 +10,7 @@ def get_aws_credentials(conn_id):
     credentials = parsed.netloc.split(":")
     access_key = credentials[0]
     secret_access_key = credentials[1][:-1]
-    token = parse_qs(parsed.query)["aws_session_token"]
+    token = parse_qs(parsed.query)["aws_session_token"][0]
     return access_key, secret_access_key, token
 
 
