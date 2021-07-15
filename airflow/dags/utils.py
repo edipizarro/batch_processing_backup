@@ -1,6 +1,6 @@
 from airflow import settings
 from airflow.models.connection import Connection
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 
 def get_aws_credentials(conn_id):
@@ -10,7 +10,8 @@ def get_aws_credentials(conn_id):
     credentials = parsed.netloc.split(":")
     access_key = credentials[0]
     secret_access_key = credentials[1][:-1]
-    return access_key, secret_access_key
+    token = parse_qs(parsed.query)["aws_session_token"]
+    return access_key, secret_access_key, token
 
 
 def get_tables_to_process(vars):
