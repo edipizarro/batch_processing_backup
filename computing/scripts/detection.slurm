@@ -20,4 +20,4 @@ export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
 
 echo "${SLURM_ARRAY_TASK_ID} ${SLURM_JOB_NODELIST}"
 
-python3 ../computing/get_correction.py ${input} ${output} ${SLURM_ARRAY_TASK_ID} ${SLURM_JOB_NODELIST} ${SLURM_ARRAY_JOB_ID} $resources --file-format $format
+python3 ../get_correction.py ${input} ${output} ${SLURM_ARRAY_TASK_ID} ${SLURM_JOB_NODELIST} ${SLURM_ARRAY_JOB_ID} $resources --file-format $format
