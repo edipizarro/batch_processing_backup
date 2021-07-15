@@ -91,6 +91,7 @@ def get_leftraru_tasks(dag):
         )
 
         sensor_s3_files_uploaded = S3PrefixSensor(
+            task_id=f"check_{table}_files_in_s3",
             bucket_name=s3_url.bucket,
             prefix=s3_url.add_prefix(table + "*"),
             aws_conn_id="aws_connection",
