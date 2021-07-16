@@ -11,7 +11,7 @@ from load_psql.loaders import (
     XmatchCSVLoader,
     AllwiseCSVLoader,
     FeatureCSVLoader,
-    ProbabilityCSVLoader
+    ProbabilityCSVLoader,
 )
 from load_psql.table_data.table_columns import (
     det_col,
@@ -26,7 +26,7 @@ from load_psql.table_data.table_columns import (
     xmatch_col,
     allwise_col,
     fea_col,
-    probabiliy_col
+    probabiliy_col,
 )
 
 from pyspark.sql import SparkSession, Window
@@ -65,13 +65,19 @@ def validate_config(config):
         "object",
         "magstat",
         "ps1_ztf",
-        "gaia_ztf",
         "ss_ztf",
         "reference",
         "dataquality",
         "xmatch",
-        "probability",
         "feature",
+        "gaia_ztf",
+        "allwise",
+        "lc_classifier",
+        "lc_classifier_top",
+        "lc_classifier_stochastic",
+        "lc_classifier_transient",
+        "lc_classifier_periodic",
+        "stamp_classifier",
     ]
     csv_loader_options = ["n_partitions", "max_records_per_file", "mode"]
     if "db" not in config:
@@ -112,6 +118,7 @@ def loader_create_csv(
         column_list=column_list,
         **kwargs,
     )
+
 
 def loader_load_csv(Loader, table_name, config):
     Loader.psql_load_csv(config["outputs"][table_name], config["db"], table_name)
@@ -430,17 +437,24 @@ def create_csv(config_file, config_json, loglevel):
             AllwiseCSVLoader, "allwise", config, spark, default_args, allwise_col.copy()
         )
 
-    for table in ["lc_classifier", "lc_classifier_top", "lc_classifier_stochastic", "lc_classifier_transient", "lc_classifier_periodic", "stamp_classifier"]:
+    for table in [
+        "lc_classifier",
+        "lc_classifier_top",
+        "lc_classifier_stochastic",
+        "lc_classifier_transient",
+        "lc_classifier_periodic",
+        "stamp_classifier",
+    ]:
         if config["tables"][table]:
             loader_create_csv(
-               ProbabilityCSVLoader, 
-               table, 
-               config, 
-               spark, 
-               default_args, 
-               probabiliy_col.copy(),  
-               version=classifier_version.get(table, step_id), 
-               classifier_name=table
+                ProbabilityCSVLoader,
+                table,
+                config,
+                spark,
+                default_args,
+                probabiliy_col.copy(),
+                version=classifier_version.get(table, step_id),
+                classifier_name=table,
             )
 
     if config["tables"]["feature"]:
@@ -516,11 +530,14 @@ def psql_copy_csv(
         pass
     if config["tables"]["feature"]:
         loader_load_csv(FeatureCSVLoader, "feature", config)
-    
-    for table in ["lc_classifier", "lc_classifier_top", "lc_classifier_stochastic", "lc_classifier_transient", "lc_classifier_periodic", "stamp_classifier"]:
+
+    for table in [
+        "lc_classifier",
+        "lc_classifier_top",
+        "lc_classifier_stochastic",
+        "lc_classifier_transient",
+        "lc_classifier_periodic",
+        "stamp_classifier",
+    ]:
         if config["tables"][table]:
-            loader_load_csv(
-               ProbabilityCSVLoader, 
-               table, 
-               config 
-            )
+            loader_load_csv(ProbabilityCSVLoader, table, config)
