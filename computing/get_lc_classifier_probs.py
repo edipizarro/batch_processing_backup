@@ -25,7 +25,7 @@ def compute_features(features_dir, xmatches_dir):
     features["W1-W2"] = features["w1mpro"] - features["w2mpro"]
     features["W2-W3"] = features["w2mpro"] - features["w3mpro"]
     features["g-W2"] = features["mean_mag_1"] - features["w2mpro"]
-    features["g-W3"] = features["mean_mag_2"] - features["w3mpro"]
+    features["g-W3"] = features["mean_mag_1"] - features["w3mpro"]
     features["r-W2"] = features["mean_mag_2"] - features["w2mpro"]
     features["r-W3"] = features["mean_mag_2"] - features["w3mpro"]
 
