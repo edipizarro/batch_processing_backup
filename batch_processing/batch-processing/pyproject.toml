@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "batch-processing"
+version = "0.1.0"
+description = ""
+authors = ["Edison Pizarro <edison.pizarro.godoy@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastavro = "^1.9.3"
+pandas = "^2.2.0"
+pyspark = "^3.5.0"
+requests = "^2.31.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
