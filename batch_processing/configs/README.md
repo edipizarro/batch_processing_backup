@@ -1,61 +1,61 @@
 # Configuration
 
-## ZTFUtils Configuration
+## ZTFCrawler Configuration
 
 This section provides an overview of the configuration parameters used in the 
-ZTF (Zwicky Transient Facility) ZTFUtils class. The configuration is specified 
+ZTF (Zwicky Transient Facility) ZTFCrawler class. The configuration is specified 
 in a JSON file and is used to customize various aspects of the data retrieval 
 and storage.
 
 ### Configuration File: `raw.config.json`
 ```json
 {
-    "url_source_base": "https://ztf.uw.edu/alerts/public/",
-    "url_source_file_prefix": "ztf_public_",
-    "url_source_file_postfix": ".tar.gz",
-    "files_base_folder": "/home/alerce/batch_processing/data",
-    "downloads_folder": "compressed_avros",
-    "untar_folder": "uncompressed_avros",
-    "parquet_folder": "parquet",
-    "batch_size": 2500,
-    "compression": "snappy",
-    "delete_data": "false",
-    "overwrite_data": "false",
-    "start_date": "2023/12/26",
-    "end_date": "2023/12/27",
-    "date_format": "%Y/%m/%d"
+    "UrlSourceBase": "https://ztf.uw.edu/alerts/public/",
+    "UrlSourceFilePrefix": "ztf_public_",
+    "UrlSourceFilePostfix": ".tar.gz",
+    "DataFolder": "/home/alerce/batch_processing/data",
+    "CompressedAvrosFolder": "compressed_avros",
+    "UncompressedAvrosFolder": "uncompressed_avros",
+    "RawParquetFolder": "parquet",
+    "BatchSize": 2500,
+    "ParquetCompression": "snappy",
+    "DeleteData": "false",
+    "OverwriteData": "false",
+    "StartDate": "2023/12/26",
+    "EndDate": "2023/12/27",
+    "DateFormat": "%Y/%m/%d"
 }
 ```
 
 ### Configuration Parameters:
 
-    1. `url_source_base` (string): The base URL for downloading ZTF public data.
+    1. `UrlSourceBase` (string): The base URL for downloading ZTF public data.
 
-    2. `url_source_file_prefix` (string): Prefix for ZTF public data files.
+    2. `UrlSourceFilePrefix` (string): Prefix for ZTF public data files.
 
-    3. `url_source_file_postfix` (string): Postfix for ZTF public data files.
+    3. `UrlSourceFilePostfix` (string): Postfix for ZTF public data files.
 
-    4. `files_base_folder` (string): Base folder where data files will be stored.
+    4. `DataFolder` (string): Base folder where data files will be stored.
 
-    5. `downloads_folder` (string): Subfolder for storing compressed Avro files.
+    5. `CompressedAvrosFolder` (string): Subfolder for storing compressed Avro files.
 
-    6. `untar_folder` (string): Subfolder for storing uncompressed Avro files.
+    6. `UncompressedAvrosFolder` (string): Subfolder for storing uncompressed Avro files.
 
-    7. `parquet_folder` (string): Subfolder for storing Parquet files.
+    7. `RawParquetFolder` (string): Subfolder for storing Parquet files.
 
-    8. `batch_size` (integer): Size of each batch for processing data.
+    8. `BatchSize` (integer): Size of each batch for processing data.
 
-    9. `compression` (string): Compression algorithm to be used (e.g., "snappy").
+    9. `ParquetCompression` (string): Compression algorithm to be used (e.g., "snappy").
 
-    10. `delete_data` (string): If "true," original data files will be deleted after processing.
+    10. `DeleteData` (string): If "true," original data files will be deleted after processing.
 
-    11. `overwrite_data` (string): If "true," existing data files will be overwritten.
+    11. `OverwriteData` (string): If "true," existing data files will be overwritten.
 
-    12. `start_date` (string): Start date for data processing (format given by date_format).
+    12. `StartDate` (string): Start date for data processing (format given by DateFormat).
 
-    13. `end_date` (string): End date for data processing (format given by date_format).
+    13. `EndDate` (string): End date for data processing (format given by DateFormat).
 
-    14. `date_format` (string): Format of dates in the configuration (e.g., "%Y/%m/%d").
+    14. `DateFormat` (string): Format of dates in the configuration (e.g., "%Y/%m/%d").
 
 ## ParquetReader Configuration
 
@@ -68,22 +68,22 @@ Parquet files.
 
 ```json
 {
-    "files_base_folder": "/home/alerce/batch_processing/data",
-    "parquet_folder": "parquet",
-    "start_date": "2023/12/26",
-    "end_date": "2023/12/27",
-    "date_format": "%Y/%m/%d"
+    "DataFolder": "/home/alerce/batch_processing/data",
+    "RawParquetFolder": "parquet",
+    "StartDate": "2023/12/26",
+    "EndDate": "2023/12/27",
+    "DateFormat": "%Y/%m/%d"
 }
 ```
 
 ### Configuration Parameters:
 
-    1. `files_base_folder` (string): The base folder where Parquet files are located.
+    1. `DataFolder` (string): The base folder where Parquet files are located.
 
-    2. `parquet_folder` (string): Subfolder within files_base_folder containing Parquet files.
+    2. `RawParquetFolder` (string): Subfolder within DataFolder containing Parquet files.
 
-    3. `start_date` (string): Start date for reading Parquet files (format: "YYYY/MM/DD").
+    3. `StartDate` (string): Start date for reading Parquet files (format: "YYYY/MM/DD").
 
-    4. `end_date` (string): End date for reading Parquet files (format: "YYYY/MM/DD").
+    4. `EndDate` (string): End date for reading Parquet files (format: "YYYY/MM/DD").
 
-    5. `date_format` (string): Format of dates in the configuration (e.g., "%Y/%m/%d").
+    5. `DateFormat` (string): Format of dates in the configuration (e.g., "%Y/%m/%d").
