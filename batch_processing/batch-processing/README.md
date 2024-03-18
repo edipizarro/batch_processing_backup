@@ -1,6 +1,6 @@
 # Batch Processing Module
 
-The Batch Processing module is currently designed for handling large-scale data processing tasks, specifically focused on ZTF (Zwicky Transient Facility) data. This module includes classes for reading Parquet files (ParquetReader) and utility functions for various tasks related to ZTF data processing (ZTFUtils).
+The Batch Processing module is currently designed for handling large-scale data processing tasks, specifically focused on ZTF (Zwicky Transient Facility) data. This module includes classes for reading Parquet files (ParquetReader) and utility functions for various tasks related to ZTF data processing (ZTFCrawler).
 
 ## ParquetReader Class
 
@@ -15,11 +15,11 @@ Below is an example configuration file (`read.config.json`):
 
 ```json
 {
-    "files_base_folder": "/home/alerce/batch_processing/data",
-    "parquet_folder": "parquet",
-    "start_date": "2023/12/26",
-    "end_date": "2023/12/27",
-    "date_format": "%Y/%m/%d"
+    "DataFolder": "/home/alerce/batch_processing/data",
+    "RawParquetFolder": "parquet",
+    "StartDate": "2023/12/26",
+    "EndDate": "2023/12/27",
+    "DateFormat": "%Y/%m/%d"
 }
 ```
 
@@ -28,32 +28,32 @@ For more details on the configuration parameters and usage, refer to the Configu
 ### Usage
 Refer to the `read.py` example in the `/scripts` folder.
 
-## ZTFUtils Class
+## ZTFCrawler Class
 
 ### Overview
 
-The ZTFUtils class provides utility functions for various tasks related to ZTF data processing, including downloading, untarring, and creating Parquet files.
+The ZTFCrawler class provides utility functions for various tasks related to ZTF data processing, including downloading, untarring, and creating Parquet files.
 
 ### Configuration
 
-The configuration for the `ZTFUtils` class is provided in a JSON file. Below is an example configuration file (`raw.config.json`):
+The configuration for the `ZTFCrawler` class is provided in a JSON file. Below is an example configuration file (`raw.config.json`):
 
 ```json
 {
-    "url_source_base": "https://ztf.uw.edu/alerts/public/",
-    "url_source_file_prefix": "ztf_public_",
-    "url_source_file_postfix": ".tar.gz",
-    "files_base_folder": "/home/alerce/batch_processing/data",
-    "downloads_folder": "compressed_avros",
-    "untar_folder": "uncompressed_avros",
-    "parquet_folder": "parquet",
-    "batch_size": 2500,
-    "compression": "snappy",
-    "delete_data": "false",
-    "overwrite_data": "false",
-    "start_date": "2023/12/26",
-    "end_date": "2023/12/27",
-    "date_format": "%Y/%m/%d"
+    "UrlSourceBase": "https://ztf.uw.edu/alerts/public/",
+    "UrlSourceFilePrefix": "ztf_public_",
+    "UrlSourceFilePostfix": ".tar.gz",
+    "DataFolder": "/home/alerce/batch_processing/data",
+    "CompressedAvrosFolder": "compressed_avros",
+    "UncompressedAvrosFolder": "uncompressed_avros",
+    "RawParquetFolder": "parquet",
+    "BatchSize": 2500,
+    "ParquetCompression": "snappy",
+    "DeleteData": "false",
+    "OverwriteData": "false",
+    "StartDate": "2023/12/26",
+    "EndDate": "2023/12/27",
+    "DateFormat": "%Y/%m/%d"
 }
 ```
 
