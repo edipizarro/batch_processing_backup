@@ -19,6 +19,8 @@ performance-timer = {path = "libs/performance_timer", develop = true}
 astropy = "^6.0.0"
 matplotlib = "^3.8.3"
 scipy = "^1.12.0"
+connectorx = "^0.3.2"
+pymongo = "^4.6.2"
 
 [build-system]
 requires = ["poetry-core"]
