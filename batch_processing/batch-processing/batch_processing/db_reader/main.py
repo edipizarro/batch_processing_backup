@@ -133,7 +133,7 @@ class DBParquetWriter(DBParquetBase):
             self,
             start_firstmjd: str,
             last_firstmjd: str,
-            columns = ["oid", "aid", "firstmjd"]
+            columns = ["oid", "aid", "ra", "dec"]
         ):
         return self.execute_db_operation(
             mongo_code_block        = lambda: self._mongo_object_query(start_firstmjd, last_firstmjd, columns),
@@ -144,7 +144,7 @@ class DBParquetWriter(DBParquetBase):
             self,
             start_firstmjd: str,
             last_firstmjd: str,
-            columns = ["aid", "oid", "firstmjd"]
+            columns = ["aid", "oid", "ra", "dec"]
         ) -> dict:
         filter = { "firstmjd": { "$gte": int(start_firstmjd), "$lt": int(last_firstmjd) } }
         projection = { col: True for col in columns }
@@ -159,7 +159,7 @@ class DBParquetWriter(DBParquetBase):
             self,
             start_firstmjd: str,
             last_firstmjd: str,
-            columns = ["aid", "oid", "firstmjd"]
+            columns = ["aid", "oid", "ra", "dec"]
         ) -> str:
         return f'''
             SELECT
