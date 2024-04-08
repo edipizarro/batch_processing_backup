@@ -3,6 +3,8 @@ import glob
 import logging
 import os
 
+import polars
+
 def path_exists(path, s3: bool = False, spark_context = None):
     if s3:
         hpath = spark_context._jvm.org.apache.hadoop.fs.Path(path)
@@ -78,3 +80,8 @@ def _rm_directory_or_file( path):
 
         # rm folder
         os.rmdir(path)
+
+def drop_polars_columms(df: polars.DataFrame, columns: list[str]):
+    for column in columns:
+        df.drop_in_place(column)
+    return df
