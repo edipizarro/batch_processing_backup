@@ -1,4 +1,7 @@
+import io
+
 import json
+import fastavro.schema
 import requests
 import tarfile
 import os
@@ -6,9 +9,9 @@ from datetime import datetime
 import tarfile
 
 import fastavro
-from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType
+import polars
 
+from batch_processing.db_reader import DBParquetReader
 from batch_utils import (
     date_to_mjd,
     str_to_date,
@@ -16,9 +19,11 @@ from batch_utils import (
     configure_logger,
     _init_path,
     _rm_directory_or_file,
+    drop_polars_columms,
 )
 
-from .spark_schemas import avro_schema_alert
+from batch_utils.sorting_hat import df_sorting_hat
+
 
 class ZTFCrawler():
     """
@@ -43,16 +48,6 @@ class ZTFCrawler():
         # Configure logger
         self.logger = configure_logger()
 
-        # Configure Spark
-        self.spark = None
-
-    def register_spark_session(self, spark: SparkSession):
-        """
-        Register a Spark session.
-
-        :param spark: An initialized SparkSession object.
-        """
-        self.spark = spark
 
     def get_downloads_mjd_folder(self, mjd) -> str:
         """
@@ -155,17 +150,26 @@ class ZTFCrawler():
         :param date: Date for which ZTF public data is requested.
         :param mjd: Modified Julian Date.
         """
-        ztf_date = date.strftime("%Y%m%d")
-        url = os.path.join(
-            self.config["UrlSourceBase"],
-            self.config["UrlSourceFilePrefix"] + ztf_date + self.config["UrlSourceFilePostfix"]
-        )
+        avros_folder = self.get_uncompressed_mjd_folder(mjd)
+        parquet_folder = self.get_parquet_mjd_folder(mjd)
+        for data_folder in (avros_folder, parquet_folder):
+            if self._exists_directory_or_file(data_folder):
+                self.logger.info(f"{data_folder} exists, TAR won't be downloaded")
+                return
+
         download_directory = os.path.join(
             self.config["DataFolder"],
             self.config["SubDataFolder"]["CompressedAvros"]
         )
 
         _init_path(download_directory)
+
+        ztf_date = date.strftime("%Y%m%d")
+        url = os.path.join(
+            self.config["UrlSourceBase"],
+            self.config["UrlSourceFilePrefix"] + ztf_date + self.config["UrlSourceFilePostfix"]
+        )
+
         download_path = os.path.join(
             download_directory,
             mjd + self.config["UrlSourceFilePostfix"]
@@ -214,6 +218,11 @@ class ZTFCrawler():
         :param mjd: Modified Julian Date.
         :param progress: If True, shows progress and extracts by member (slower).
         """
+        parquet_folder = self.get_parquet_mjd_folder(mjd)
+        if self._exists_directory_or_file(parquet_folder):
+            self.logger.info(f"{parquet_folder} exists, AVROs won't be extracted")
+            return
+
         source = self.get_downloads_mjd_folder(mjd)
         destination_folder = self.get_uncompressed_mjd_folder(mjd)
         self._untar_file(source, destination_folder, progress)
@@ -227,10 +236,10 @@ class ZTFCrawler():
         :return: Avro data generator.
         """
         for avro_path in avro_paths:
-            with open(avro_path,'rb') as avro_file:
-                freader = fastavro.reader(avro_file, avro_schema)
-                packet = next(freader)
-            yield packet
+            with open(avro_path,'rb') as encoded_avro:
+                avro_reader = fastavro.reader(encoded_avro, avro_schema)
+                avro = next(avro_reader)
+            yield avro
     
     def _get_ztf_public_avro_generator(self, mjd: str, avro_schema=None):
         """
@@ -244,34 +253,62 @@ class ZTFCrawler():
         avro_paths = [os.path.join(directory, avro) for avro in os.listdir(directory)]
         return self._get_avro_generator(avro_paths, avro_schema)
 
-    def _write_batch_to_parquet(self, batch: list[dict], schema: StructType, output_folder: str, name: str):
+    def _write_batch_to_parquet(self, df, output_folder: str, name: str):
         """
-        Write a batch of dictionaries to a Parquet file using PySpark.
+        Write a batch of dictionaries to a Parquet file.
 
         :param batch: List of dictionaries.
-        :param schema: PySpark StructType schema.
         :param output_folder: Folder where the Parquet file will be saved.
         :param name: Param used to identify the parquet file.
         """
-        # Convert the batch to a PySpark DataFrame
-        df = self.spark.createDataFrame(batch, schema)
 
         # Generate a unique filename based on timestamp or other criteria
-        parquet_filename = f"{name}"
+        compression = self.config.get("ParquetCompression")
+        parquet_filename = f"{name}.{compression}.parquet"
 
-        # Write the PySpark DataFrame to a Parquet file
+        # Write the DataFrame to a Parquet file
         parquet_path = os.path.join(output_folder, parquet_filename)
-        df.write.parquet(
+        df.write_parquet(
             parquet_path,
-            mode="ignore",
-            compression=self.config["ParquetCompression"]
+            compression = compression,
+            compression_level = 1
         )
-
         self.logger.info(f"Parquet file written: {parquet_path}")
+
+    def lazy_df_all_data(self) -> polars.LazyFrame | None:
+        sorting_hat_parquets_paths = os.path.join(
+            self.config["DataFolder"],
+            self.config["SubDataFolder"]["RawParquet"],
+            "**",
+            "*.parquet"
+        )
+        try:
+            lazy_df = polars.read_parquet(sorting_hat_parquets_paths)
+        except FileNotFoundError as e:
+            self.logger.info(e)
+            lazy_df = None
+        return lazy_df
+
+    def _write_sorting_hat_parquet(self, avros, output_folder, current_batch):
+        df = polars.from_dicts(avros)
+
+        stamps_columns =["cutoutScience", "cutoutTemplate", "cutoutDifference", "candid"]
+        # df_stamps = df.select(stamps_columns) #! CREAR DATAFRAME DE ESTAMPILLAS
+        #! HACER STAMP CLASSIFIER
+
+        df = drop_polars_columms(df,stamps_columns)
+
+        # SORTING HAT LOGIC
+        #! LOGGER IN DB PARQUET READER IS SPAMMING MESSAGES
+        # db_reader = DBParquetReader(config_dict=self.config)
+        db_reader = None
+        lazy_df_all_data = self.lazy_df_all_data()
+        df = df_sorting_hat(db_reader, df, lazy_df_all_data)        
+        self._write_batch_to_parquet(df, output_folder, current_batch)
 
     def _create_parquet_files(self, avro_generator, batch_size: int, output_folder: str):
         """
-        Create Parquet files from an avro generator using PySpark.
+        Create Parquet files from an avro generator.
 
         :param avro_generator: Generator that yields dictionaries.
         :param batch_size: Size of each batch.
@@ -283,16 +320,13 @@ class ZTFCrawler():
 
         if batch_size == 0:
             batch = list(avro_generator)
-            schema = avro_schema_alert
-            self._write_batch_to_parquet(batch, schema, output_folder, "0")
+            self._write_sorting_hat_parquet(batch, output_folder, "0")
         elif batch_size > 0:
             try:
                 first = next(avro_generator)
             except StopIteration:
                 self.logger.info("Current MJD is empty")
                 return
-            schema = avro_schema_alert
-
             batch = [first]
             avros_in_batch = 1
             current_batch = 0
@@ -302,14 +336,14 @@ class ZTFCrawler():
                 avros_in_batch += 1
 
                 if avros_in_batch == batch_size:
-                    self._write_batch_to_parquet(batch, schema, output_folder, current_batch)
+                    self._write_sorting_hat_parquet(batch, output_folder, current_batch)
                     batch = []
                     avros_in_batch = 0
                     current_batch += 1
 
             # Write the remaining items as the last batch (if any)
             if batch:
-                self._write_batch_to_parquet(batch, schema, output_folder, current_batch)
+                self._write_sorting_hat_parquet(batch, output_folder, current_batch)
         else:
             raise ValueError("batch_size must be a number greater or equal to 0")
     
@@ -336,9 +370,5 @@ class ZTFCrawler():
         for date in dates_between_generator(StartDate, EndDate):
             mjd = date_to_mjd(date)
             self._download_ztf_public(date, mjd)
-            try:
-                self._untar_ztf_public(mjd)
-            except tarfile.ReadError as e:
-                self.logger.warn(f"NOT VALID TAR FOR {mjd}")
-                continue
+            self._untar_ztf_public(mjd)
             self._create_ztf_public_parquet(mjd)
