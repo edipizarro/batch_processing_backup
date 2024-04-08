@@ -6,4 +6,5 @@ from .batch_utils import (
     _init_path,
     _rm_directory_or_file,
     path_exists,
+    drop_polars_columms,
 )
