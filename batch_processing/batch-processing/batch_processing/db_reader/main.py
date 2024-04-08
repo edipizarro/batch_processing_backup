@@ -191,10 +191,11 @@ class DBParquetWriter(DBParquetBase):
             last_firstmjd = str(int(mjd) + 1)
             query = self.object_query(start_firstmjd, last_firstmjd)
             df = self.df_from_query(query, mongo_collection="object")
-            #! ELIMINAR EXPLODE DESPUÉS DE ACTUALIZAR MONGODB
-            df = df.explode("oid") # Create one row per oid
-            df = df.sort(["oid", "firstmjd", "aid"], descending=False)
-            self.write_parquet_mjd(df, mjd)
+            if not df.is_empty():
+                #! ELIMINAR EXPLODE DESPUÉS DE ACTUALIZAR MONGODB
+                df = df.explode("oid") # Create one row per oid
+                df = df.sort(["oid", "aid"], descending=False)
+                self.write_parquet_mjd(df, mjd)
 
 
 class DBParquetReader(DBParquetBase):
@@ -202,9 +203,21 @@ class DBParquetReader(DBParquetBase):
         """
         Initialize the DBParquetReader class.
 
-        :param config_path: Path to the configuration file in JSON format.
         """
         super().__init__(config_path, config_dict)
+
+    def get_base_db_parquet_path(self) -> str:
+        driver = "mongodb"
+        if driver == "mongodb":
+            folder = "MongoParquet"
+        elif "PSQLParquet":
+            folder = "PSQLParquet"
+        else:
+            raise ValueError(f"Invalid db driver: {driver}")
+        return os.path.join(
+            self.config["DataFolder"],
+            self.config["SubDataFolder"][folder]
+        )
 
     def _get_all_parquet_path(self):
         base_folder = self.get_base_db_parquet_path()
@@ -216,9 +229,9 @@ class DBParquetReader(DBParquetBase):
         df = polars.scan_parquet(source, rechunk=True)
         return df
     
-    def df_many(self, column: str, values: list):
+    def df_matched_column(self, column: str, values: list, select_columns: list[str] = ["oid", "aid"]):
         lazy_df = self.lazy_df()
-        df = lazy_df.filter(polars.col(column).is_in(values)).collect()
+        df = lazy_df.select(select_columns).filter(polars.col(column).is_in(values)).collect()
         return df
     
     def find_one_in_df(self, df, column: str, value):
@@ -235,7 +248,7 @@ class DBParquetReader(DBParquetBase):
     
     def mapped_data(self, key_column: str, value_column: str, key_values: list) -> dict:
         mapped_data = {}
-        df = self.df_many(key_column, key_values)
+        df = self.df_matched_column(key_column, key_values)
         list_of_dicts = df.to_dicts()
         for row in list_of_dicts:
             mapped_data[row[key_column]] = row[value_column]
