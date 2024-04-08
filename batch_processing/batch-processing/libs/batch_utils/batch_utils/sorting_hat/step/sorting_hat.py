@@ -1,0 +1,296 @@
+import math
+import polars
+
+from batch_processing.db_reader import DBParquetReader
+
+#! Sorting Hat to use when keeping old AIDs
+# def df_sorting_hat(db_reader: DBParquetReader, df: polars.DataFrame):
+#     df = _parse_ztf_df(df)
+#     df = df_with_aid_column_matched_by_oid_in_parquet_db_object_collection(db_reader, df)
+#     # Conesearch
+#     # Generate ID
+#     return df
+
+#! Sorting hat without looking for AID on db
+def df_sorting_hat(db_reader: DBParquetReader, df: polars.DataFrame, lazy_df_all_data: polars.LazyFrame | None):
+    df = _parse_ztf_df(df)
+    if type(lazy_df_all_data) == None:
+        lazy_df_all_data = lazy_df_all_data.select(["oid", "aid"])
+    df = add_new_aid(df, lazy_df_all_data)
+    return df
+
+def df_with_aid_column_matched_by_oid_in_parquet_db_object_collection(db_reader: DBParquetReader, df: polars.DataFrame):
+    oid_df = df.select(polars.col("oid"))
+    oids = [row[0] for row in oid_df.iter_rows()]
+    df_matched_columns = db_reader.df_matched_column("oid", oids, ["oid", "aid"])
+    df.join(df_matched_columns, on="oid", how="left")
+    return df
+
+# def cone_search():
+        ## si no, revisar si ya existe aid para el object (busqueda por cone search?)
+                #     db.database["object"].find_one(
+                #     {
+                #         "loc": {
+                #             "$nearSphere": {
+                #                 "$geometry": {
+                #                     "type": "Point",
+                #                     "coordinates": [ra - 180, dec],
+                #                 },
+                #                 "$maxDistance": math.radians(radius / 3600) * 6.3781e6,
+                #             },
+                #         },
+                #     },
+                #     {"aid": 1},
+                # )
+
+def add_new_aid(df: polars.DataFrame, lazy_df_all_data: polars.LazyFrame | None):
+    if type(lazy_df_all_data) == None:
+        df = df_aid_previous_detections(df, lazy_df_all_data)
+    aid = create_aid_df_column(df)
+    df = df.with_columns(aid)
+    return df
+
+def df_aid_previous_detections(df, lazy_df_all_data):
+    lazy_df_uniques = lazy_df_all_data.filter(lazy_df_all_data.is_duplicated())
+    matched_df = df.join(lazy_df_uniques, on="oid", how="left")
+    return matched_df
+
+def create_aid_df_column(df):
+    oid_to_aid = {}
+    aid_list = []
+    columns = ["oid", "ra", "dec", "aid"] if "aid" in df.columns else ["oid", "ra", "dec"]
+    for row in df.select(columns).iter_rows():
+        if "aid" in columns:
+            oid, ra, dec, aid = row
+        else:
+            oid, ra, dec, aid = [*row, None]
+
+        if aid:
+            oid_to_aid[oid] = aid
+        else:
+            aid = oid_to_aid.get(oid, None)
+        if not aid:
+            aid = alerce_id_generator(ra, dec)
+            oid_to_aid[oid] = aid
+        aid_list.append(aid)
+    aid_series = polars.Series(name="aid", values=aid_list)
+    return aid_series
+
+
+def map_alerce_id_generator(ra_dec: tuple[float]):
+    ra, dec = ra_dec
+    return alerce_id_generator(ra, dec)
+
+def alerce_id_generator(ra: float, dec: float) -> int:
+    """
+    Method that create an identifier of 19 digits given its ra, dec.
+    :param ra: right ascension in degrees
+    :param dec: declination in degrees
+    :return: alerce id
+    """
+    # 19-Digit ID - two spare at the end for up to 100 duplicates
+    aid = 1000000000000000000
+
+    # 2013-11-15 KWS Altered code to fix the negative RA problem
+    if ra < 0.0:
+        ra += 360.0
+
+    if ra > 360.0:
+        ra -= 360.0
+
+    # Calculation assumes Decimal Degrees:
+    ra_hh = int(ra / 15)
+    ra_mm = int((ra / 15 - ra_hh) * 60)
+    ra_ss = int(((ra / 15 - ra_hh) * 60 - ra_mm) * 60)
+    ra_ff = int((((ra / 15 - ra_hh) * 60 - ra_mm) * 60 - ra_ss) * 100)
+
+    if dec >= 0:
+        h = 1
+    else:
+        h = 0
+        dec = dec * -1
+
+    dec_deg = int(dec)
+    dec_mm = int((dec - dec_deg) * 60)
+    dec_ss = int(((dec - dec_deg) * 60 - dec_mm) * 60)
+    dec_f = int(((((dec - dec_deg) * 60 - dec_mm) * 60) - dec_ss) * 10)
+
+    aid += ra_hh * 10000000000000000
+    aid += ra_mm * 100000000000000
+    aid += ra_ss * 1000000000000
+    aid += ra_ff * 10000000000
+
+    aid += h * 1000000000
+    aid += dec_deg * 10000000
+    aid += dec_mm * 100000
+    aid += dec_ss * 1000
+    aid += dec_f * 100
+    # transform to str
+    return aid
+
+def _parse_ztf_df(df: polars.DataFrame):
+    df = unnest_candidate(df)
+
+    ERRORS = {
+        1: 0.065,
+        2: 0.085,
+        3: 0.01,
+    }
+
+    FILTER = {
+        1: "g",
+        2: "r",
+        3: "i",
+    }
+
+    def _e_ra(dec_fid):
+        dec, fid = dec_fid
+        try:
+            return ERRORS[fid] / abs(math.cos(math.radians(dec)))
+        except ZeroDivisionError:
+            return float("nan")
+
+    # Define functions for transformation
+    def map_fid(fid):
+        return FILTER.get(fid)
+
+    def map_mjd(df_mjd):
+        return df_mjd - 2400000.5
+
+    def map_e_ra(dec_fid):
+        return _e_ra(dec_fid)
+
+    def map_e_dec(fid):
+        return ERRORS.get(fid)
+
+    def map_isdiffpos(value):
+        return 1 if value in ["t", "1"] else -1
+
+    # Apply transformations to DataFrame
+    df = df.cast({
+        "candid": polars.String,
+        "oid": polars.String,
+    })
+
+    # .replace("e_ra", df.select(["dec", "fid"]).apply(map_e_ra))
+    df = polars.concat([
+            df,
+            df.select(["dec", "fid"]).apply(map_e_ra).rename({"map": "e_ra"})
+        ],
+        how="horizontal"
+    )
+    
+    df = df.with_columns(polars.lit("ZTF").alias("tid"))\
+        .with_columns(polars.lit("ZTF").alias("sid"))\
+        .replace("fid", df["fid"].apply(map_fid))\
+        .replace("mjd", map_mjd(df["mjd"]))\
+        .with_columns(df["fid"].apply(map_e_dec).alias("e_dec"))\
+        .replace("isdiffpos", df["isdiffpos"].apply(map_isdiffpos))
+    return df     
+        
+def unnest_candidate(df: polars.DataFrame):
+    df = df.drop("candid")
+    df = df.unnest("candidate")
+    df = df.select([
+        polars.col("objectId").alias("oid"),
+        "prv_candidates",
+        "fp_hists",
+        polars.col("jd").alias("mjd"),
+        "fid",
+        "pid",
+        "diffmaglim",
+        "pdiffimfilename",
+        "programpi",
+        "programid",
+        "candid",
+        "isdiffpos",
+        "tblid",
+        "nid",
+        "rcid",
+        "field",
+        "xpos",
+        "ypos",
+        "ra",
+        "dec",
+        polars.col("magpsf").alias("mag"),
+        polars.col("sigmapsf").alias("e_mag"),
+        "chipsf",
+        "magap",
+        "sigmagap",
+        "distnr",
+        "magnr",
+        "sigmagnr",
+        "chinr",
+        "sharpnr",
+        "sky",
+        "magdiff",
+        "fwhm",
+        "classtar",
+        "mindtoedge",
+        "magfromlim",
+        "seeratio",
+        "aimage",
+        "bimage",
+        "aimagerat",
+        "bimagerat",
+        "elong",
+        "nneg",
+        "nbad",
+        "rb",
+        "ssdistnr",
+        "ssmagnr",
+        "ssnamenr",
+        "sumrat",
+        "magapbig",
+        "sigmagapbig",
+        "ranr",
+        "decnr",
+        "sgmag1",
+        "srmag1",
+        "simag1",
+        "szmag1",
+        "sgscore1",
+        "distpsnr1",
+        "objectidps1",
+        "objectidps2",
+        "sgmag2",
+        "srmag2",
+        "simag2",
+        "szmag2",
+        "sgscore2",
+        "distpsnr2",
+        "objectidps3",
+        "sgmag3",
+        "srmag3",
+        "simag3",
+        "szmag3",
+        "sgscore3",
+        "distpsnr3",
+        "nmtchps",
+        "rfid",
+        "jdstarthist",
+        "jdendhist",
+        "scorr",
+        "tooflag",
+        "drbversion",
+        "dsnrms",
+        "ssnrms",
+        "dsdiff",
+        "magzpsci",
+        "magzpsciunc",
+        "magzpscirms",
+        "nmatches",
+        "clrcoeff",
+        "clrcounc",
+        "zpclrcov",
+        "zpmed",
+        "clrmed",
+        "clrrms",
+        "neargaia",
+        "neargaiabright",
+        "maggaia",
+        "maggaiabright",
+        "exptime",
+        "drb"
+    ])
+    return df
