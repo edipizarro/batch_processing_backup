@@ -129,7 +129,65 @@ def alerce_id_generator(ra: float, dec: float) -> int:
     return aid
 
 def _parse_ztf_df(df: polars.DataFrame):
-    df = unnest_candidate(df)
+    df = _drop_unnecessary_fields(df)
+    df = _unnest_candidate(df)
+    df = _rename_columns(df)
+    df = _apply_transformations(df)
+    df = _parse_extrafields(df)
+    return df     
+
+def _drop_unnecessary_fields(df: polars.DataFrame):
+    fields_to_drop = [
+        "schemavsn",
+        "publisher",
+        "cutoutScience",
+        "cutoutTemplate",
+        "cutoutDifference"
+    ]
+    df = df.drop(fields_to_drop)
+    return df
+
+
+def _unnest_candidate(df: polars.DataFrame):
+    df = df.drop("candid")
+    df = df.unnest("candidate")
+    return df
+
+def _rename_columns(df: polars.DataFrame):
+    to_rename = [
+        {"objectId": "oid"},
+        {"jd": "mjd"},
+        {"magpsf": "mag"},
+        {"sigmapsf": "e_mag"},
+    ]
+    for rename_map in to_rename:
+        df = df.rename(rename_map)
+    return df
+
+def _parse_extrafields(df: polars.DataFrame):
+    not_extrafields = [
+        "oid",
+        "tid",
+        "sid",
+        "pid",
+        "candid",
+        "mjd",
+        "fid",
+        "ra",
+        "dec",
+        "mag",
+        "e_mag",
+        "isdiffpos",
+        "e_ra",
+        "e_dec",
+    ]
+    df_extrafields = df.drop(not_extrafields)
+    column_extrafields = polars.DataFrame({"extra_fields": df_extrafields})
+    df = df.select(not_extrafields)
+    df = df.with_columns(column_extrafields)
+    return df
+
+def _apply_transformations(df: polars.DataFrame):
 
     ERRORS = {
         1: 0.065,
@@ -186,111 +244,5 @@ def _parse_ztf_df(df: polars.DataFrame):
         .replace("mjd", map_mjd(df["mjd"]))\
         .with_columns(df["fid"].apply(map_e_dec).alias("e_dec"))\
         .replace("isdiffpos", df["isdiffpos"].apply(map_isdiffpos))
-    return df     
-        
-def unnest_candidate(df: polars.DataFrame):
-    df = df.drop("candid")
-    df = df.unnest("candidate")
-    df = df.select([
-        polars.col("objectId").alias("oid"),
-        "prv_candidates",
-        "fp_hists",
-        polars.col("jd").alias("mjd"),
-        "fid",
-        "pid",
-        "diffmaglim",
-        "pdiffimfilename",
-        "programpi",
-        "programid",
-        "candid",
-        "isdiffpos",
-        "tblid",
-        "nid",
-        "rcid",
-        "field",
-        "xpos",
-        "ypos",
-        "ra",
-        "dec",
-        polars.col("magpsf").alias("mag"),
-        polars.col("sigmapsf").alias("e_mag"),
-        "chipsf",
-        "magap",
-        "sigmagap",
-        "distnr",
-        "magnr",
-        "sigmagnr",
-        "chinr",
-        "sharpnr",
-        "sky",
-        "magdiff",
-        "fwhm",
-        "classtar",
-        "mindtoedge",
-        "magfromlim",
-        "seeratio",
-        "aimage",
-        "bimage",
-        "aimagerat",
-        "bimagerat",
-        "elong",
-        "nneg",
-        "nbad",
-        "rb",
-        "ssdistnr",
-        "ssmagnr",
-        "ssnamenr",
-        "sumrat",
-        "magapbig",
-        "sigmagapbig",
-        "ranr",
-        "decnr",
-        "sgmag1",
-        "srmag1",
-        "simag1",
-        "szmag1",
-        "sgscore1",
-        "distpsnr1",
-        "objectidps1",
-        "objectidps2",
-        "sgmag2",
-        "srmag2",
-        "simag2",
-        "szmag2",
-        "sgscore2",
-        "distpsnr2",
-        "objectidps3",
-        "sgmag3",
-        "srmag3",
-        "simag3",
-        "szmag3",
-        "sgscore3",
-        "distpsnr3",
-        "nmtchps",
-        "rfid",
-        "jdstarthist",
-        "jdendhist",
-        "scorr",
-        "tooflag",
-        "drbversion",
-        "dsnrms",
-        "ssnrms",
-        "dsdiff",
-        "magzpsci",
-        "magzpsciunc",
-        "magzpscirms",
-        "nmatches",
-        "clrcoeff",
-        "clrcounc",
-        "zpclrcov",
-        "zpmed",
-        "clrmed",
-        "clrrms",
-        "neargaia",
-        "neargaiabright",
-        "maggaia",
-        "maggaiabright",
-        "exptime",
-        "drb"
-    ])
+
     return df
