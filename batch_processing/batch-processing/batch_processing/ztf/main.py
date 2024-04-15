@@ -23,6 +23,8 @@ from batch_utils import (
 )
 
 from batch_utils.sorting_hat import df_sorting_hat
+from batch_utils.prv_candidates import extract_detections_and_non_detections_dataframe
+
 
 
 class ZTFCrawler():
@@ -303,7 +305,8 @@ class ZTFCrawler():
         # db_reader = DBParquetReader(config_dict=self.config)
         db_reader = None
         lazy_df_all_data = self.lazy_df_all_data()
-        df = df_sorting_hat(db_reader, df, lazy_df_all_data)        
+        df = df_sorting_hat(db_reader, df, lazy_df_all_data)
+        df = extract_detections_and_non_detections_dataframe(df)
         self._write_batch_to_parquet(df, output_folder, current_batch)
 
     def _create_parquet_files(self, avro_generator, batch_size: int, output_folder: str):
