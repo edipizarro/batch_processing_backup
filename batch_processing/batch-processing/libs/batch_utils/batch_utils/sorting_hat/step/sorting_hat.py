@@ -12,11 +12,21 @@ from batch_processing.db_reader import DBParquetReader
 #     return df
 
 #! Sorting hat without looking for AID on db
-def df_sorting_hat(db_reader: DBParquetReader, df: polars.DataFrame, lazy_df_all_data: polars.LazyFrame | None):
+def df_sorting_hat(db_reader: DBParquetReader, df: polars.DataFrame):
     df = _parse_ztf_df(df)
-    if type(lazy_df_all_data) == None:
-        lazy_df_all_data = lazy_df_all_data.select(["oid", "aid"])
-    df = add_new_aid(df, lazy_df_all_data)
+    df = add_new_aid(df)
+    return df
+
+
+def sorting_hat_aid_replacer(db_reader: DBParquetReader, df: polars.DataFrame, lazy_oid_aid_all_data: polars.LazyFrame | None):
+    if lazy_oid_aid_all_data is not None: # If there are prev parquets
+        lazy_df_unique_oid = lazy_oid_aid_all_data.unique(subset=['oid'], keep='first') # Find first appearance of an oid
+        joined_df = df.join(lazy_df_unique_oid, on='oid', how='left') # Find aid for each oid of the current df
+        # Coalesce, aid_right corresponds to the aid to replace. aid corresponds to the aid in the current df
+        joined_df = joined_df.with_columns(polars.coalesce(["aid_right",  "aid"]). alias('aid'))
+        joined_df = joined_df.drop('aid_right')
+        df = joined_df
+        df = df.select(sorted(df.columns))
     return df
 
 def df_with_aid_column_matched_by_oid_in_parquet_db_object_collection(db_reader: DBParquetReader, df: polars.DataFrame):
@@ -43,17 +53,10 @@ def df_with_aid_column_matched_by_oid_in_parquet_db_object_collection(db_reader:
                 #     {"aid": 1},
                 # )
 
-def add_new_aid(df: polars.DataFrame, lazy_df_all_data: polars.LazyFrame | None):
-    if type(lazy_df_all_data) == None:
-        df = df_aid_previous_detections(df, lazy_df_all_data)
+def add_new_aid(df: polars.DataFrame):
     aid = create_aid_df_column(df)
     df = df.with_columns(aid)
     return df
-
-def df_aid_previous_detections(df, lazy_df_all_data):
-    lazy_df_uniques = lazy_df_all_data.filter(lazy_df_all_data.is_duplicated())
-    matched_df = df.join(lazy_df_uniques, on="oid", how="left")
-    return matched_df
 
 def create_aid_df_column(df):
     oid_to_aid = {}
@@ -180,11 +183,16 @@ def _parse_extrafields(df: polars.DataFrame):
         "isdiffpos",
         "e_ra",
         "e_dec",
+        "unparsed_jd",
+        "unparsed_fid", 
+        "unparsed_isdiffpos"
     ]
     df_extrafields = df.drop(not_extrafields)
+    df_extrafields = df_extrafields.select(sorted(df_extrafields.columns))
     column_extrafields = polars.DataFrame({"extra_fields": df_extrafields})
     df = df.select(not_extrafields)
     df = df.with_columns(column_extrafields)
+    df = df.select(sorted(df.columns))
     return df
 
 def _apply_transformations(df: polars.DataFrame):
@@ -236,13 +244,16 @@ def _apply_transformations(df: polars.DataFrame):
             df.select(["dec", "fid"]).apply(map_e_ra).rename({"map": "e_ra"})
         ],
         how="horizontal"
-    )
-    
+    )    
+
     df = df.with_columns(polars.lit("ZTF").alias("tid"))\
         .with_columns(polars.lit("ZTF").alias("sid"))\
         .replace("fid", df["fid"].apply(map_fid))\
+        .with_columns(df["fid"].alias("unparsed_fid"))\
         .replace("mjd", map_mjd(df["mjd"]))\
+        .with_columns(df["mjd"].alias("unparsed_jd"))\
         .with_columns(df["fid"].apply(map_e_dec).alias("e_dec"))\
-        .replace("isdiffpos", df["isdiffpos"].apply(map_isdiffpos))
+        .replace("isdiffpos", df["isdiffpos"].apply(map_isdiffpos))\
+        .with_columns(df['isdiffpos'].alias("unparsed_isdiffpos"))
 
     return df
