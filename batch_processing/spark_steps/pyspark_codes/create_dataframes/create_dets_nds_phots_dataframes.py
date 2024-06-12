@@ -1,14 +1,10 @@
 import pyspark
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, struct, explode, array, coalesce
+from pyspark.sql.functions import col, cos, radians, when, abs, struct, explode
+from pyspark import StorageLevel
+
 from pyspark.sql import functions as F
 from pyspark.sql.types import StructType, StructField, StringType, LongType, DoubleType, BooleanType, ArrayType, IntegerType, ShortType
-spark = SparkSession.builder.config("spark.driver.host", "localhost").appName("SparkExample").getOrCreate()
-conf = pyspark.SparkConf()
-from pyspark.sql.functions import lit
-
-spark_context = SparkSession.builder.config(conf=conf).getOrCreate()
-
 
 # Fields to replace during the extra_field update
 repeated_extra_fields = ['magap', 'pdiffimfilename', 'rcid', 'seeratio', 'rbversion', 'jdendref', 'rfid', 'ssnrms', 'clrrms', 'simag3', 'distnr', 'diffmaglim', 'szmag2', 'ndethist', 'zpclrcov', 'nmtchps', 'maggaiabright', 'nmatches', 'sky', 'scorr', 'jdstarthist', 'candid', 'bimagerat', 'clrcoeff', 'neargaiabright', 'nbad', 'objectidps1', 'elong', 'programid', 'magzpsciunc', 'szmag3', 'jdendhist', 'simag2', 'chinr', 'sgmag1', 'szmag1', 'distpsnr2', 'jdstartref', 'magzpsci', 'tooflag', 'sgmag3', 'exptime', 'sumrat', 'drbversion', 'sgmag2', 'magfromlim', 'maggaia', 'nframesref', 'programpi', 'mindtoedge', 'objectidps2', 'sigmagnr', 'srmag2', 'ypos', 'tblid', 'aimage', 'field', 'dsdiff', 'ssmagnr', 'xpos', 'ranr', 'simag1', 'nneg', 'aimagerat', 'unique_id', 'sgscore2', 'srmag3', 'clrcounc', 'oid', 'srmag1', 'sharpnr', 'sigmagap', 'classtar', 'nid', 'ssdistnr', 'ncovhist', 'fwhm', 'decnr', 'magdiff', 'sgscore3', 'bimage', 'distpsnr3', 'chipsf', 'zpmed', 'ssnamenr', 'clrmed', 'dsnrms', 'distpsnr1', 'drb', 'sigmagapbig', 'neargaia', 'sgscore1', 'magnr', 'objectidps3', 'magapbig', 'rb', 'magzpscirms']
