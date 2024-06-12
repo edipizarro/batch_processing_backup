@@ -1,23 +1,17 @@
 import pyspark
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import log10, col, struct, array, explode, pow, sqrt, concat, when, abs, sum
-from pyspark.sql import functions as F
+from pyspark.sql.functions import col, cos, radians, when, abs, struct, explode, collect_list, array, sqrt, log10, lit, sum, broadcast
+from pyspark import StorageLevel
 from pyspark.sql.window import Window
-spark = SparkSession.builder.config("spark.driver.host", "localhost").config("spark.driver.memory", "5g").appName("SparkExample").getOrCreate()
-conf = pyspark.SparkConf()
-from pyspark.sql.functions import collect_list
-from pyspark.sql.functions import lit
 
+from pyspark.sql import functions as F
+from pyspark.sql.types import StructType, StructField, StringType, LongType, DoubleType, BooleanType, ArrayType, IntegerType, ShortType
 DISTANCE_THRESHOLD = 1.4
 SCORE_THRESHOLD = 0.4
 CHINR_THRESHOLD = 2
 SHARPNR_MAX = 0.1
 SHARPNR_MIN = -0.13
 _ZERO_MAG = 100.0
-
-
-spark_context = SparkSession.builder.config(conf=conf).getOrCreate()
-
 
 
 def separate_dataframe_lc_df(lightcurve_df):
@@ -39,37 +33,29 @@ def init_corrector(detections):
 
 def is_corrected_func(corrector_detections):
     condition = corrector_detections["distnr"] < DISTANCE_THRESHOLD
-    corrector_detections = corrector_detections.select(
-    "*",
-    when(condition, True).otherwise(False).alias("corrected")
-    )
+    corrector_detections = corrector_detections.withColumn("corrected", when(condition, True).otherwise(False))
     return corrector_detections
 
 def is_first_corrected(corrector_detections):
+    #! Aumenta el numero de detecciones por alguna razon? => Also, el join se vuelve loco y marca 500TiB
     window_spec = Window.partitionBy("oid", "fid").orderBy("mjd")
-    min_mjd = F.min("mjd").over(window_spec).alias("min_mjd")
-    corrector_detections = corrector_detections.select("*", min_mjd)
-    first_corrected = corrector_detections.filter(F.col("mjd") == F.col("min_mjd"))
-    result = first_corrected.select("corrected", "oid", "fid")
-    result = result.select(col("*"), col("corrected").alias("is_first_corrected")).drop('corrected')
-    corrector_detections= corrector_detections.join((result),how="left", on=["oid", "fid"])
+    corrector_detections = corrector_detections.withColumn("min_mjd", F.min("mjd").over(window_spec))
+    corrector_detections = corrector_detections.withColumn("is_first_corrected", 
+                                                           F.when(F.col("mjd") == F.min("mjd").over(window_spec), True)
+                                                           .otherwise(False))
     corrector_detections = corrector_detections.drop("min_mjd")
-    corrector_detections = corrector_detections.distinct()
     return corrector_detections
 
-def is_dubious_func(corrector_detections):
-    corrector_detections = corrector_detections.select(
-    "*",
-    when(corrector_detections["isdiffpos"] == -1, True).otherwise(False).alias("is_negative"))                                                                                                                                    
-    corrector_detections = is_first_corrected(corrector_detections)
-    
-    is_dubious_condition = (
-    (~col("corrected") & col("is_negative")) |
-    (col("is_first_corrected") & ~col("corrected")) |
-    (~col("is_first_corrected") & col("corrected")))
-    corrector_detections = corrector_detections.select(
-        "*",is_dubious_condition.alias("dubious"))
 
+def is_dubious_func(corrector_detections):    
+    corrector_detections = corrector_detections.withColumn("is_negative", when(corrector_detections["isdiffpos"] == -1, True).otherwise(False))                                                                                                                                      
+    corrector_detections = is_corrected_func(corrector_detections)
+    corrector_detections = is_first_corrected(corrector_detections)
+    is_dubious_condition = (
+    (~F.col("corrected") & F.col("is_negative")) |
+    (F.col("is_first_corrected") & ~F.col("corrected")) |
+    (~F.col("is_first_corrected") & F.col("corrected")))
+    corrector_detections = corrector_detections.withColumn("dubious", is_dubious_condition)
     corrector_detections = corrector_detections.drop("is_negative", "is_first_corrected")
     return corrector_detections
 
@@ -241,7 +227,6 @@ def execute_corrector(lightcurve_df):
     detections, non_detections, candids = separate_dataframe_lc_df(lightcurve_df)
     print('Separated dataframes')
     corrector_detections = init_corrector(detections)
-    corrector_detections.repartition('oid')
     print('Separated corrector detections')
     corrector_detections = is_corrected_func(corrector_detections)
     print('Completed is corrected')
@@ -249,6 +234,7 @@ def execute_corrector(lightcurve_df):
     print('Completed is dubious')
     corrector_detections = is_stellar_func(corrector_detections)
     print('Completed is stellar')
+
 
     print('Corrected detections:')
     corrector_detections = correct(corrector_detections)
@@ -269,10 +255,11 @@ def execute_corrector(lightcurve_df):
 
 
 def produce_correction(lightcurve_df):
-    corrector_detections, corrected_coordinates, non_detections, candids= execute_corrector(lightcurve_df)    
-    print('Preparing output...')
+    corrector_detections,corrected_coordinates, non_detections, candids= execute_corrector(lightcurve_df)
+    print('Preparing output (joining results)...')
     oid_detections_df = corrector_detections.groupby('oid').agg(collect_list(struct(corrector_detections.columns)).alias('detections'))
     non_detections = non_detections.groupby('oid').agg(collect_list(struct(non_detections.columns)).alias('non_detections'))
+
     correction_step_output = corrected_coordinates.join((candids), on='oid')
     correction_step_output = correction_step_output.join((oid_detections_df), on='oid')
     correction_step_output = correction_step_output.join((non_detections), on='oid', how='left')
@@ -280,7 +267,7 @@ def produce_correction(lightcurve_df):
                      if column_name not in ["non_detections"]]
     correction_step_output = correction_step_output.select(
                     *columns_to_select,when(col("non_detections").isNotNull(), col("non_detections")).otherwise(array()).alias("non_detections"))
-    #correction_step_output.limit(1).show()
+
     return correction_step_output
 
 
