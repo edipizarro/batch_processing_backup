@@ -1,12 +1,19 @@
 import pyspark
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, cos, radians, when, abs, struct, explode, lit, collect_list
-from pyspark import StorageLevel
+from pyspark.sql.functions import col, cos, radians, when, abs, struct, explode,collect_list
 
 from pyspark.sql import functions as F
 from pyspark.sql.types import StructType, StructField, StringType, LongType, DoubleType, BooleanType, ArrayType, IntegerType, ShortType
+spark = SparkSession.builder.config("spark.driver.host", "localhost").config("spark.driver.memory", "6g").appName("SparkExample").getOrCreate()
+conf = pyspark.SparkConf()
+from pyspark.sql.functions import lit
+
+spark_context = SparkSession.builder.config(conf=conf).getOrCreate()
 
 _ZERO_MAG = 100.0
+def load_dataframes(sorting_hat_dir):
+    parquetDataFrame = spark.read.format("parquet").option("recursiveFileLookup", "true").load(sorting_hat_dir)
+    return parquetDataFrame
 
 def modify_alert_fields(df):
     extra_fields_columns = df.select(col("extra_fields.*")).columns
@@ -15,7 +22,7 @@ def modify_alert_fields(df):
 
     expanded_extra_fields = expanded_extra_fields.withColumn("has_stamp", lit(False))\
                                                  .withColumn("forced", lit(False))\
-                                                 .withColumn("parent_candid", lit("None"))
+                                                 .withColumn("parent_candid", lit(None))
     
     extra_fields_columns.remove('prv_candidates')
     extra_fields_columns.remove('fp_hists')
@@ -299,11 +306,9 @@ def restruct_detections(df):
 def extract_detections_and_non_detections_dataframe_reparsed(df):
     modified_alert = modify_alert_fields(df)
     grouped_dets, grouped_fphots, grouped_ndets = restruct_detections(df)
-
-    parsed_df = modified_alert.join(grouped_dets, on=['oid', 'candid'], how='left') \
-                          .join(grouped_fphots, on=['oid', 'candid'], how='left') \
-                          .join(grouped_ndets, on=['oid', 'candid'], how='left')
-
+    parsed_df = modified_alert.join(grouped_dets,on=['oid', 'candid'],  how='left'
+        ).join(grouped_fphots, on=['oid', 'candid'], how='left'
+        ).join(grouped_ndets, on=['oid', 'candid'], how='left')
     parsed_df = parsed_df.select(sorted(parsed_df.columns))
     return parsed_df
 

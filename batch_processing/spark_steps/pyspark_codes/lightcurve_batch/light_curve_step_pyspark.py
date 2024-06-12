@@ -1,14 +1,11 @@
 import pyspark
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, struct, explode, array, coalesce
-from pyspark.sql import functions as F
-spark = SparkSession.builder.config("spark.driver.host", "localhost").appName("SparkExample").getOrCreate()
-conf = pyspark.SparkConf()
-from pyspark.sql.functions import collect_list
-from pyspark.sql.functions import lit
-import pandas as pd
+from pyspark.sql.functions import col, cos, radians, when, abs, struct, explode, collect_list
+from pyspark import StorageLevel
 
-spark_context = SparkSession.builder.config(conf=conf).getOrCreate()
+from pyspark.sql import functions as F
+from pyspark.sql.types import StructType, StructField, StringType, LongType, DoubleType, BooleanType, ArrayType, IntegerType, ShortType
+
 
 # Flag used in light_curve step. If it is False, applies filter
 # Otherwise remains with the same detections it outputs
@@ -42,7 +39,6 @@ def pre_produce_light_curve(oid_df, candids, last_mjds, all_dets_joined, non_det
     return output_df
 
 def execute_light_curve(detections, non_detections, forced_photometries):
-    oid_df = detections.select("oid").distinct()
     all_dets_joined = detections.unionByName(forced_photometries, allowMissingColumns=True)
     candids = detections.groupBy("oid").agg(collect_list("candid").alias("candids"))
     last_mjds = detections.groupBy("oid").agg(F.max("mjd").alias("last_mjds"))
