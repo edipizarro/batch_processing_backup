@@ -24,8 +24,7 @@ def load_dataframes(parquet_dir):
     parquetDataFrame = spark.read.format("parquet").option("recursiveFileLookup", "true").load(parquet_dir)
     return parquetDataFrame
 
-def separate_dataframe_lc(directory_lightcurve):
-    lightcurve_df = load_dataframes(directory_lightcurve)
+def separate_dataframe_lc_df(lightcurve_df):
     detections = lightcurve_df.select("detections")
     exploded_dets = detections.select(explode("detections").alias("exploded_data"))
     detections_df = exploded_dets.select("exploded_data.*")
@@ -118,9 +117,6 @@ def isclose(a, b, rtol=1e-05, atol=1e-08):
     return abs_diff <= threshold
 
 
-
-#! inf -> zero mag se aplica solo a corrections. 
-#! -inf -> none se aplica a toda las detecciones??
 def infinities_replacer(corrector_detections):
     corrector_detections = corrector_detections.withColumn("mag_corr", 
                                                        when(corrector_detections["mag_corr"] == float('inf'), _ZERO_MAG)
@@ -229,31 +225,42 @@ def correct_coordinates(non_forced):
     return corrected_coords
 
 
-def execute_corrector(directory_lightcurve):
-    detections, non_detections, candids = separate_dataframe_lc(directory_lightcurve)
+def execute_corrector(lightcurve_df):
+    detections, non_detections, candids = separate_dataframe_lc_df(lightcurve_df)
     corrector_detections = init_corrector(detections)
     corrector_detections = is_corrected_func(corrector_detections)
     corrector_detections = is_dubious_func(corrector_detections)
     corrector_detections = is_stellar_func(corrector_detections)
-   
+
+    print('Corrected detections:')
     corrector_detections = correct(corrector_detections)
     corrector_detections = restruct_extrafields(corrector_detections)
     non_forced = get_non_forced(corrector_detections)
     non_forced = arcsec2dec_era_edec(non_forced)
     non_forced = create_weighted_columns(non_forced)
+    print('corrected nonforced:')
+    print('corrected coords:')
     corrected_coordinates = correct_coordinates(non_forced)
 
+    print('non detections')
     non_detections = non_detections.drop_duplicates(["oid", "mjd", "fid"])
     sorted_columns_nondetections = sorted(non_detections.columns)
     non_detections = non_detections.select(*sorted_columns_nondetections)
     return corrector_detections, corrected_coordinates, non_detections, candids
 
-def produce_correction(directory_lightcurve):
-    corrector_detections, corrected_coordinates, non_detections, candids= execute_corrector(directory_lightcurve)    
+
+
+def produce_correction(lightcurve_df):
+    corrector_detections, corrected_coordinates, non_detections, candids= execute_corrector(lightcurve_df)    
+    corrector_detections.show(1)
     #! DROP INDEX. ITS NOT USED ANYWHERE ELSE. WE'VE KEPT IT FOR COMPARISON WITH PIPELINE!
     #corrector_detections = corrector_detections.drop("index")
+    print('oid detections df')
     oid_detections_df = corrector_detections.groupby('oid').agg(collect_list(struct(corrector_detections.columns)).alias('detections'))
+    print('non detections')
     non_detections = non_detections.groupby('oid').agg(collect_list(struct(non_detections.columns)).alias('non_detections'))
+    non_detections.show(1)
+    print('correction step output')
     correction_step_output = corrected_coordinates.join(candids, on='oid')
     correction_step_output = correction_step_output.join(oid_detections_df, on='oid')
     correction_step_output = correction_step_output.join(non_detections, on='oid', how='left')
@@ -261,7 +268,5 @@ def produce_correction(directory_lightcurve):
     return correction_step_output
 
 
-correction_step_output = produce_correction("1_lightcurve/*")
-correction_step_output.write.parquet("correction_step.snappy.parquet", compression = 'snappy', mode='overwrite')
 
 #! Revisar que esta mata tanto la memoria => is_dubious o is_stellar!!! (hay mil warning de memoria)  exceptions
