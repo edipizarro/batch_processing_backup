@@ -59,9 +59,4 @@ def pre_produce_light_curve(oid_df, candids, last_mjds, all_dets_joined, non_det
 
     return output_df
 
-dets, non_detections, forced_photometries = load_each_dataframe('output/detections.snappy.parquet*', "output/non_detection.snappy.parquet",  "output/forced_photometries.snappy.parquet")
-oid_df, candids, last_mjds, all_dets_joined, non_detections = pre_execute_light_curve(dets, non_detections, forced_photometries)
-dataframe_lightcurve = pre_produce_light_curve(oid_df, candids, last_mjds, all_dets_joined, non_detections)
-dataframe_lightcurve.write.parquet("parquets_lightcurve/lightcurve.parquet", compression = 'snappy', mode='overwrite')
-
 
