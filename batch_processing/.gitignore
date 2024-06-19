@@ -7,3 +7,5 @@ data
 
 # Configuration files
 *.json
+
+/.idea
