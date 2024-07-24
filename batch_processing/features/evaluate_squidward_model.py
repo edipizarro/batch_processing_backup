@@ -41,7 +41,7 @@ def predict_over_batch(batch_filename: str, output_filename: str):
 if __name__ == "__main__":
     dir_name = sys.argv[1]
     file_list = os.listdir(dir_name)
-    output_dir = os.path.join(dir_name, 'probabilities_squidward')
+    output_dir = os.path.join(dir_name, 'probabilities_squidward_1_0_7')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     file_list = [filename for filename in file_list if "features_astro_objects_batch" in filename]
@@ -51,6 +51,8 @@ if __name__ == "__main__":
     for batch_filename in file_list:
         full_filename = os.path.join(dir_name, batch_filename)
         output_filename = os.path.join(output_dir, batch_filename.replace("features", "probs_squidward"))
+        if os.path.exists(output_filename):
+            continue
         tasks.append(
             delayed(predict_over_batch)(full_filename, output_filename)
         )
