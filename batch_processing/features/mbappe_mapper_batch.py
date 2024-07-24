@@ -1,8 +1,8 @@
-from alerce_classifiers.base.dto import InputDTO
+# from alerce_classifiers.base.dto import InputDTO
 from alerce_classifiers.base.dto import OutputDTO
 from alerce_classifiers.base.mapper import Mapper
 from alerce_classifiers.utils.dataframe.mbappe_utils import DataframeUtils
-from alerce_classifiers.mbappe.utils import magdiff2flux_uJy, fluxerr
+# from alerce_classifiers.mbappe.utils import magdiff2flux_uJy, fluxerr
 
 import pandas as pd
 import numpy as np
@@ -10,7 +10,7 @@ import torch
 import yaml
 import os
 from alerce_classifiers.mbappe import configs
-from lc_classifier.utils import AstroObject
+from lc_classifier.utils import AstroObject, all_features_from_astro_objects
 from typing import List
 
 
@@ -27,9 +27,13 @@ class MbappeMapperBatchProcessing(Mapper):
     }
 
     def _preprocess_detections(self, detections: pd.DataFrame):
-        detections["fluxdiff_uJy"] = magdiff2flux_uJy(df=detections, col_mag="mag")
-        detections["fluxerrdiff_uJy"] = fluxerr(
-            df=detections, col_magerr="e_mag", col_flux="fluxdiff_uJy"
+        detections = detections[detections['unit'] == 'diff_flux'].copy()
+        detections.rename(
+            columns={
+                'brightness': 'fluxdiff_uJy', 
+                'e_brightness': 'fluxerrdiff_uJy'
+            },
+            inplace=True
         )
 
         # Las curvas vienen ordenadas de menor a mayor?
@@ -87,9 +91,27 @@ class MbappeMapperBatchProcessing(Mapper):
         return torch_input
 
     def preprocess(self, astro_objects: List[AstroObject], **kwargs) -> tuple:
-        preprocessed_light_curve = self._preprocess_detections(data_input.detections)
+        all_detections = pd.concat([ao.detections for ao in astro_objects])
+        all_features = all_features_from_astro_objects(astro_objects)
+
+        def update_names(old_name):
+            splitted_old_name = old_name.replace('-', '_').split('_')
+            suffix = splitted_old_name[-1]
+            if suffix == 'g,r':
+                return '_'.join(splitted_old_name[:-1]) + '_12'
+            if suffix == 'g':
+                return '_'.join(splitted_old_name[:-1]) + '_1'
+            if suffix == 'r':
+                return '_'.join(splitted_old_name[:-1]) + '_2'
+            else:
+                return '_'.join(splitted_old_name[:-1])
+
+        all_features.rename(columns=update_names, inplace=True)
+        all_features.index = [i.split('_')[-1] for i in all_features.index.values]
+
+        preprocessed_light_curve = self._preprocess_detections(all_detections)
         preprocessed_features = self._preprocess_features(
-            data_input.features, kwargs["quantiles"]
+            all_features, kwargs["quantiles"]
         )
 
         df_lc_feat = pd.merge(
@@ -98,6 +120,7 @@ class MbappeMapperBatchProcessing(Mapper):
             left_index=True,
             right_index=True,
         )
+        df_lc_feat.index.name = 'oid'
 
         feat_columns = preprocessed_features.columns
         torch_input = self._to_tensor_dict(df_lc_feat, feat_columns)
@@ -109,4 +132,4 @@ class MbappeMapperBatchProcessing(Mapper):
         probs = pd.DataFrame(probs, columns=kwargs["taxonomy"], index=kwargs["index"])
         probs = probs.groupby(level="oid").mean()
 
-        return OutputDTO(probs, {"children": pd.DataFrame([]), "top": {}})
+        return probs
