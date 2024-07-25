@@ -1,0 +1,11 @@
+{
+    "DataFolder": "/home/edipizarro/alerce/batch_processing/batch_processing/data",
+    "S3Bucket": "s3a://batch-processing-test-data-1/data/",
+    "SubDataFolder": {
+        "RawParquet": "raw_parquet",
+        "SortingHatParquet": "sortinghat_parquet"
+    },
+    "DateFormat": "%Y/%m/%d",
+    "StartDate": "2023/12/17",
+    "EndDate": "2023/12/17"
+}

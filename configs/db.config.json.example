@@ -1,0 +1,22 @@
+{
+    "DataFolder": "/home/edipizarro/projects/batch_processing/batch_processing/data",
+    "SubDataFolder": {
+        "PSQLParquet": "psql_parquet",
+        "MongoParquet": "mongo_parquet"
+    },
+    "ParquetCompression": "zstd",
+    "DeleteData": "false",
+    "OverwriteData": "false",
+    "StartDate": "2023/01/01",
+    "EndDate": "2023/01/31",
+    "DateFormat": "%Y/%m/%d",
+    "DBCredentials": {
+        "DBUser": "",
+        "DBPassword": "",
+        "DBHost": "",
+        "DBPort": "27017",
+        "DBName": "",
+        "DBDriver": "mongodb",
+        "DBAuthSource": ""
+    }
+}
