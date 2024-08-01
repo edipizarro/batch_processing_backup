@@ -1,3 +1,3 @@
-# Batch processing
+# Batch Processing
 
-Old and new (in development) batch processing.
+Library for batch processing
