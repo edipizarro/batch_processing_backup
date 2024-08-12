@@ -14,7 +14,6 @@ import glob
 import re
 
 
-from batch_processing.db_reader import DBParquetReader
 from batch_utils import (
     date_to_mjd,
     str_to_date,
@@ -24,11 +23,6 @@ from batch_utils import (
     _rm_directory_or_file,
     drop_polars_columms,
 )
-
-from batch_utils.sorting_hat import df_sorting_hat, sorting_hat_aid_replacer
-from batch_utils.prv_candidates import extract_detections_and_non_detections_dataframe_multiprocessing
-
-
 
 class ZTFCrawler():
     """
@@ -291,24 +285,6 @@ class ZTFCrawler():
         
         self.logger.info(f"Parquet file written: {parquet_path}")
 
-    def lazy_df_all_data(self) -> polars.LazyFrame | None:
-        sorting_hat_parquets_paths = os.path.join(
-            self.config["DataFolder"],
-            self.config["SubDataFolder"]["RawParquet"],
-            "**",
-            "*.parquet"
-        )
-        """  ## Assign always an empty lazy dataframe, to ignore all the other paths
-        try:
-            lazy_df = polars.read_parquet(sorting_hat_parquets_paths)
-        except FileNotFoundError as e:
-            self.logger.info(e)
-            lazy_df = None
-        """
-        lazy_df = None
-        return lazy_df
-    
-
     # Auxiliary function to get the parquet mjd from the path using regex. Used to filter by mjd date
     def get_mjd_from_path(self, path):
         match = re.search(r'raw_parquet/(\d+)/', path)
@@ -338,40 +314,13 @@ class ZTFCrawler():
     def split_array(self, big_array, chunk_size):
         return [big_array[i:i+chunk_size] for i in range(0, len(big_array), chunk_size)]
 
-    # Read only the oid/aid from the other parquets.
-    #! For some reason its throwing a panic exception sometimes
-    def lazy_aid_oid_all_data(self, paths_list) -> polars.LazyFrame | None:
-        lazy_df = polars.read_parquet(paths_list, columns = ['aid', 'oid'])
-        return lazy_df
-
-    def _write_sorting_hat_parquet(self, avros, output_folder, current_batch):
+    def _prepare_batch_to_write(self, avros, output_folder, current_batch):
         df = polars.from_dicts(avros)
 
-        # Get the current MJD being processed
-        current_mjd = int(output_folder.split("raw_parquet/")[-1])
+        # Drop stamps
         stamps_columns =["cutoutScience", "cutoutTemplate", "cutoutDifference", "candid"]
-        # df_stamps = df.select(stamps_columns) #! CREAR DATAFRAME DE ESTAMPILLAS
-        #! HACER STAMP CLASSIFIER
-
         df = drop_polars_columms(df,stamps_columns)
 
-        # SORTING HAT LOGIC
-        #! LOGGER IN DB PARQUET READER IS SPAMMING MESSAGES
-        # db_reader = DBParquetReader(config_dict=self.config)
-        db_reader = None
-        df = df_sorting_hat(db_reader, df)
-        paths_parquet_past_mjd = self.paths_parquet_past_mjd(current_mjd)
-        number_aid_replacer_parquets = 1024 # Arbitrary number
-        paths_chunk = self.split_array(paths_parquet_past_mjd, number_aid_replacer_parquets)
-        if paths_chunk != []:
-            # Replace the aid in chunks. Will be modified later on
-            for paths_list in paths_chunk:
-                lazy_aid_oid_all_data = self.lazy_aid_oid_all_data(paths_list) 
-                df = sorting_hat_aid_replacer(db_reader, df, lazy_aid_oid_all_data)
-        else:
-            self.logger.info("No parquets available to apply aid replacer")
-
-        df = extract_detections_and_non_detections_dataframe_multiprocessing(df,4)
         self._write_batch_to_parquet(df, output_folder, current_batch)
 
     def _create_parquet_files(self, avro_generator, batch_size: int, output_folder: str):
@@ -388,7 +337,7 @@ class ZTFCrawler():
 
         if batch_size == 0:
             batch = list(avro_generator)
-            self._write_sorting_hat_parquet(batch, output_folder, "0")
+            self._prepare_batch_to_write(batch, output_folder, "0")
         elif batch_size > 0:
             try:
                 first = next(avro_generator)
@@ -404,14 +353,14 @@ class ZTFCrawler():
                 avros_in_batch += 1
 
                 if avros_in_batch == batch_size:
-                    self._write_sorting_hat_parquet(batch, output_folder, current_batch)
+                    self._prepare_batch_to_write(batch, output_folder, current_batch)
                     batch = []
                     avros_in_batch = 0
                     current_batch += 1
 
             # Write the remaining items as the last batch (if any)
             if batch:
-                self._write_sorting_hat_parquet(batch, output_folder, current_batch)
+                self._prepare_batch_to_write(batch, output_folder, current_batch)
         else:
             raise ValueError("batch_size must be a number greater or equal to 0")
     
