@@ -35,5 +35,3 @@ spark.conf.set("spark.sql.shuffle.partitions", "15")
 
 conf = pyspark.SparkConf()
 sc = spark.sparkContext
-# Set the checkpoint directory
-sc.setCheckpointDir("checkpoint/dir")
