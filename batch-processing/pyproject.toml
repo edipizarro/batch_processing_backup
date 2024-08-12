@@ -22,7 +22,6 @@ cramjam = "^2.8.3"
 connectorx = "^0.3.3"
 
 [tool.poetry.group.dev.dependencies]
-batch-utils = {path = "libs/batch_utils", develop = true}
 performance-timer = {path = "libs/performance_timer", develop = true}
 
 [build-system]

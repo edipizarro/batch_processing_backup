@@ -14,7 +14,7 @@ import glob
 import re
 
 
-from batch_utils import (
+from .utils import (
     date_to_mjd,
     str_to_date,
     dates_between_generator,
