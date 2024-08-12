@@ -15,9 +15,8 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import MapType, StructType, StructField, StringType, LongType, DoubleType, BooleanType, ArrayType, IntegerType, ShortType
 
 JARS = (
-    "spark_init/jars/healpix-1.0.jar, spark_init/jars/minimal_astroide-2.0.0.jar"
+    "batch_processing/pipeline/spark_init/jars/healpix-1.0.jar, batch_processing/pipeline/spark_init/jars/minimal_astroide-2.0.0.jar"
 )
-
 
 
 spark = SparkSession.builder.config("spark.memory.fraction", "0.85")\

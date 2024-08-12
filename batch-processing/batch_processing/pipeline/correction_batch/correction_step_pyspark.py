@@ -161,29 +161,49 @@ def correct(corrector_detections):
     return corrector_detections
 
 def restruct_extrafields(corrector_detections):
-    columns_not_extrafields = ['aid', 'candid', 'corrected', 'dec', 'dubious', 'e_dec', 'e_mag', 'e_mag_corr', 'e_mag_corr_ext', 'e_ra', 'fid', 'forced', 'has_stamp', 'isdiffpos', 'mag', 'mag_corr', 'mjd', 'oid', 'parent_candid', 'pid', 'ra', 'sid', 'stellar', 'tid', 'unparsed_fid', 'unparsed_isdiffpos', 'unparsed_jd']
+    columns_not_extrafields = ['aid', 'candid', 'corrected', 'dec', 'dubious', 'e_dec', 'e_mag', 'e_mag_corr', 'e_mag_corr_ext', 'e_ra', 'fid', 'forced', 'has_stamp', 'isdiffpos', 'mag', 'mag_corr', 'mjd', 'oid', 'parent_candid', 'pid', 'ra', 'sid', 'stellar', 'tid', 'unparsed_fid', 'unparsed_isdiffpos', 'unparsed_jd', 'diffmaglim', 'nid', 'magap', 'sigmagap', 'distnr', 'rb', 'rbversion', 'magapbig', 'sigmagapbig', 'rfid' ]
     columns_to_nest = [col for col in corrector_detections.columns if col not in columns_not_extrafields]
     nested_col = struct(*columns_to_nest)
     corrector_detections = corrector_detections.select('*', nested_col.alias('extra_fields'))
-    corrector_detections = corrector_detections.select('aid', 'candid', 'corrected', 'dec', 'dubious', 'e_dec', 'e_mag', 'e_mag_corr', 'e_mag_corr_ext', 'e_ra', 'extra_fields', 'fid', 'forced', 'has_stamp', 'isdiffpos', 'mag', 'mag_corr', 'mjd', 'oid', 'parent_candid', 'pid', 'ra', 'sid', 'stellar', 'tid', 'unparsed_fid', 'unparsed_isdiffpos', 'unparsed_jd')
+    corrector_detections = corrector_detections.select('aid', 'candid', 'corrected', 'dec', 'diffmaglim', 'distnr', 'dubious', 'e_dec', 'e_mag', 'e_mag_corr', 'e_mag_corr_ext', 'e_ra', 'extra_fields', 'fid', 'forced', 'has_stamp', 'isdiffpos', 'mag', 'mag_corr', 'magap', 'magapbig', 'mjd', 'nid', 'oid', 'parent_candid', 'pid', 'ra', 'rb', 'rbversion', 'rfid', 'sid', 'sigmagap', 'sigmagapbig', 'stellar', 'tid', 'unparsed_fid', 'unparsed_isdiffpos', 'unparsed_jd')
     return corrector_detections
 
-# Add a column to the dataframe, corresponding to the transformed e_ra and e_dec to arcsec
-def arcsec2dec_era_edec(non_forced):
-    non_forced = non_forced.withColumn("e_ra_arcsec", col("e_ra") / 3600.0)\
-                           .withColumn("e_dec_arcsec", col("e_dec") / 3600.0)
-    return non_forced
-
-def create_weighted_columns(non_forced):
-    non_forced = non_forced.withColumn("weighted_e_ra", pow(col("e_ra_arcsec"), -2.0).cast('float'))\
-                           .withColumn("weighted_e_dec", pow(col("e_dec_arcsec"), -2.0).cast('float'))
-    non_forced.filter(col('oid')=='ZTF22abuviyj').show()
-    return non_forced
 
 def get_non_forced(corrector_detections):
     corrector_detections = corrector_detections.filter(~col("forced"))
     return corrector_detections
 
+
+def arcsec2dec_era_edec(non_forced):
+    non_forced = non_forced.withColumn("e_ra_arcsec", col("e_ra") / 3600.0)
+    non_forced = non_forced.withColumn("e_dec_arcsec", col("e_dec") / 3600.0)
+    return non_forced
+
+def create_weighted_columns(non_forced):
+    non_forced = non_forced.withColumn("weighted_e_ra", 1.0 / (col("e_ra_arcsec") ** 2.0))
+    non_forced = non_forced.withColumn("weighted_e_dec", 1.0 / (col("e_dec_arcsec") ** 2.0))
+    return non_forced
+
+def correct_coordinates(non_forced):
+    non_forced = non_forced.repartition("oid")
+    non_forced = arcsec2dec_era_edec(non_forced)
+    non_forced = create_weighted_columns(non_forced)
+    window_spec = Window.partitionBy("oid")
+
+    non_forced = non_forced.withColumn("weighted_sum_ra", F.sum(F.col("ra") * F.col("weighted_e_ra")).over(window_spec)) \
+                           .withColumn("weighted_sum_dec", F.sum(F.col("dec") * F.col("weighted_e_dec")).over(window_spec)) \
+                           .withColumn("total_weight_e_ra", F.sum("weighted_e_ra").over(window_spec)) \
+                           .withColumn("total_weight_e_dec", F.sum("weighted_e_dec").over(window_spec))
+    
+    corrected_coords = non_forced.withColumn("meanra", col("weighted_sum_ra") / col("total_weight_e_ra")) \
+                                       .withColumn("sigmara", 3600.0 * sqrt(1 / col("total_weight_e_ra"))) \
+                                       .withColumn("meandec", col("weighted_sum_dec") / col("total_weight_e_dec")) \
+                                       .withColumn("sigmadec", 3600.0 * sqrt(1 / col("total_weight_e_dec")))
+    
+    corrected_coords = corrected_coords.select("oid", "meanra", "meandec")
+    return corrected_coords
+
+"""
 def correct_coordinates(non_forced):
     # Calculate weighted sum of RA and weighted sum of Dec
     weighted_coords = non_forced.groupBy("oid").agg(
@@ -199,7 +219,7 @@ def correct_coordinates(non_forced):
                                       .select("oid", "meanra", "meandec")
 
     return corrected_coords
-
+"""
 
 def execute_corrector(lightcurve_df):
     detections, non_detections, candids = separate_dataframe_lc_df(lightcurve_df)
@@ -228,6 +248,8 @@ def execute_corrector(lightcurve_df):
     non_detections = non_detections.drop_duplicates(["oid", "mjd", "fid"])
     sorted_columns_nondetections = sorted(non_detections.columns)
     non_detections = non_detections.select(*sorted_columns_nondetections)
+    corrector_detections.filter(col('oid')=='ZTF18aaeixba').show()
+    corrected_coordinates.filter(col('oid')=='ZTF19abzlyqu').show(truncate=False)
     return corrector_detections, corrected_coordinates, non_detections, candids
 
 

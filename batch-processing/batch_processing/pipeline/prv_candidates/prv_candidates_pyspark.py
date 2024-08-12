@@ -88,14 +88,35 @@ def apply_transformations(df, type_of_detection):
            .withColumn("isdiffpos", when(df["isdiffpos"] == "t", 1)
                                    .when(df["isdiffpos"] == "1", 1)
                                    .otherwise(-1))
-        df = df.withColumn("e_dec",  when(df["fid"] == "g", 0.065)
+        df = df.withColumn("e_dec",  when(df["fid"] == "g", 0.06499999761581421)
+                                .when(df["fid"] == "r", 0.08500000089406967)
+                                .otherwise(0.01))
+        df = df.withColumn("e_dec_decimal",  when(df["fid"] == "g", 0.065)
                                 .when(df["fid"] == "r", 0.085)
                                 .otherwise(0.01))
+        
         condition = cos(radians(col("dec"))) != 0
-        calculation = when(condition, col("e_dec") / abs(cos(radians(col("dec"))))).otherwise(float('nan'))
+        calculation = when(condition, col("e_dec_decimal") / abs(cos(radians(col("dec"))))).otherwise(float('nan'))
         df = df.withColumn("e_ra", calculation)
         df = df.withColumn("parent_candid", col("candid_alert"))
-        df = df.drop('ra_alert', 'dec_alert', 'candid_alert')
+        df = df.drop('ra_alert', 'dec_alert', 'candid_alert', 'e_dec_decimal')
+
+        import numpy
+        from pyspark.sql.types import FloatType
+        def format_and_convert(value):
+            # Convert the value to numpy float32
+            float32_value = numpy.float32(value)
+            # Format to string with high precision (24 decimal places)
+            formatted_value = format(float32_value, '.24f')
+            # Convert the formatted string back to float
+            return float(formatted_value)
+
+        # Register the function as a UDF
+        format_and_convert_udf = udf(format_and_convert, FloatType())
+
+        # Apply the UDF to the 'e_ra' column
+        df = df.withColumn("e_ra", format_and_convert_udf(df["e_ra"]))
+
 
 
     if type_of_detection == 'non_detection':

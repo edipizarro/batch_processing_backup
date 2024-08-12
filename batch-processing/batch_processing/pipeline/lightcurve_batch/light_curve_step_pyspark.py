@@ -23,3 +23,4 @@ def execute_light_curve(detections, non_detections, forced_photometries):
     output_df = oid_detections_df.join(oid_non_detections_df, on='oid', how='left').join(candids, on='oid', how='left')
  
     return output_df
+

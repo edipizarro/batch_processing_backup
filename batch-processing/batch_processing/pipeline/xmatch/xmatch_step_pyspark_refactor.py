@@ -77,7 +77,6 @@ def execute_xmatch_requests(list_dataframe_pandas, parameters, dataframe_crossma
         while retries_count > 0:
             try:
                 response = r.post('http://cdsxmatch.u-strasbg.fr/xmatch/api/v1/sync', data=parameters, files={'cat1': catalog_content}, timeout=100)
-                print(parameters)
                 break
             except Exception as e:
                 print(f"CDS xmatch client returned with error {e}")
@@ -101,26 +100,29 @@ def execute_xmatch_requests(list_dataframe_pandas, parameters, dataframe_crossma
 def execute_batchsizes(dataframe_spark):
     print(f"Processing using a batch size of {_BATCH_SIZE} oids per request to CDS")
     dataframe_crossmatch = dataframe_spark.selectExpr("oid", "meanra as ra", "meandec as dec")
-    dataframe_crossmatch.filter(col('oid')=='ZTF22abuviyj').show()
+    dataframe_crossmatch = dataframe_crossmatch.dropDuplicates()
     api = AstroideAPI()
     reference_healpix = api.create_healpix_index(dataframe_crossmatch, _NSIDE_RES, "ra", "dec")
     reference_healpix = reference_healpix.sort('ipix')
     dataframe_crossmatch = reference_healpix.toPandas()
+
+
+
     list_dataframes = pandas_dataframe_chunks(dataframe_crossmatch, _BATCH_SIZE)
     dataframe_crossmatch_chunks = pandas_dataframe_chunks(dataframe_spark.toPandas(), _BATCH_SIZE)
     xmatch_parameters = generate_parameters_request_xmatch()
     xmatches_query = execute_xmatch_requests(list_dataframes, xmatch_parameters, dataframe_crossmatch_chunks) 
 
     xmatches = xmatches_query[0]
+    print(xmatches)
     print(f'Number of oids matches with CDS (Allwise): {len(xmatches)}')
     processed_batch = xmatches_query[1]
     unprocessed_batch = xmatches_query[2]
-
     xmatches_spark = spark.createDataFrame(xmatches).withColumnRenamed("oid_in", "oid").drop("ra_in").drop("dec_in").drop("col1")
     xmatches_spark = xmatches_spark.repartition('oid')
     dataframe_spark = spark.createDataFrame(processed_batch)
     dataframe_spark = dataframe_spark.repartition('oid')
-
+    #! It's slower doing this method but also it's more protected against failures in execution
     if len(unprocessed_batch) > 0:
         unprocessed_batch = spark.createDataFrame(unprocessed_batch)
         unprocessed_batch = unprocessed_batch.repartition('oid')
