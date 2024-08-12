@@ -1,5 +1,6 @@
 from ..spark_init.pyspark_configs import *
 
+
 #! All grouped_values carry a order by mjd
 _THRESHOLD_ZTF = 13.2
 
@@ -65,8 +66,8 @@ def arcsec2dec_era_edec(non_forced):
     return non_forced
 
 def create_weighted_columns(non_forced):
-    non_forced = non_forced.withColumn("weighted_e_ra", 1 / (col("e_ra_arcsec") ** 2))
-    non_forced = non_forced.withColumn("weighted_e_dec", 1 / (col("e_dec_arcsec") ** 2))
+    non_forced = non_forced.withColumn("weighted_e_ra", 1.0 / (col("e_ra_arcsec") ** 2.0))
+    non_forced = non_forced.withColumn("weighted_e_dec", 1.0 / (col("e_dec_arcsec") ** 2.0))
     return non_forced
 
 def correct_coordinates(non_forced):
@@ -83,10 +84,31 @@ def correct_coordinates(non_forced):
     corrected_coords = non_forced.withColumn("meanra", col("weighted_sum_ra") / col("total_weight_e_ra")) \
                                        .withColumn("sigmara", 3600.0 * sqrt(1 / col("total_weight_e_ra"))) \
                                        .withColumn("meandec", col("weighted_sum_dec") / col("total_weight_e_dec")) \
-                                       .withColumn("sigmadec", 3600.0 * sqrt(1 / col("total_weight_e_dec"))) \
-                                       .drop("weighted_sum_ra", "weighted_sum_dec", "total_weight_e_ra", "total_weight_e_dec", "e_ra_arcsec", "e_dec_arcsec", "weighted_e_ra", "weighted_e_dec", "weighted_sum_ra", "weighted_sum_dec", "total_weight_e_ra", "total_weight_e_dec") 
+                                       .withColumn("sigmadec", 3600.0 * sqrt(1 / col("total_weight_e_dec"))) 
+    corrected_coords.filter(col('oid')=='ZTF19abzlyqu').show(truncate=False)
+    corrected_coords = corrected_coords.drop("weighted_sum_ra", "weighted_sum_dec", "total_weight_e_ra", "total_weight_e_dec", "e_ra_arcsec", "e_dec_arcsec", "weighted_e_ra", "weighted_e_dec", "weighted_sum_ra", "weighted_sum_dec", "total_weight_e_ra", "total_weight_e_dec") 
 
     return corrected_coords
+
+#! Assuming that the same mjd is true for all the hist columns (which should be true) can still do for each column but its going to be messier
+def create_hist_columns(detections):
+    df_with_max_mjd = detections.withColumn("max_mjd", max(when(col("ndethist").isNotNull(), col("mjd"))).over(Window.partitionBy("oid")))
+    df_with_max_mjd = df_with_max_mjd.withColumn("recent_ndethist",when(col("mjd") == col("max_mjd"), col("ndethist")))\
+                                     .withColumn("recent_ncovhist", when(col("mjd") == col("max_mjd"), col("ncovhist")))\
+                                     .withColumn("recent_starthist", when(col("mjd") == col("max_mjd"), col("jdstarthist")- 2400000.5))\
+                                     .withColumn("recent_endhist", when(col("mjd") == col("max_mjd"), col("jdendhist")- 2400000.5))
+    window_spec_fill = Window.partitionBy("oid").orderBy(col("mjd").desc()).rowsBetween(Window.unboundedPreceding, Window.unboundedFollowing)
+    detections = df_with_max_mjd.withColumn("ndethist", first("recent_ndethist").over(window_spec_fill))\
+                                .withColumn("ncovhist", first("recent_ncovhist").over(window_spec_fill))\
+                                .withColumn("mjdstarthist", first("recent_starthist").over(window_spec_fill))\
+                                .withColumn("mjdendhist", first("recent_endhist").over(window_spec_fill))
+     
+    detections = detections.drop("max_mjd", "recent_ndethist", "recent_ncovhist", "recent_starthist", "recent_endhist")
+    detections.filter(col('oid')=='ZTF19abzlyqu').show()
+    detections.show()
+    return detections
+
+
 
 #! Por corroborar en ambos casos
 def select_corrected_stellar_firstmjd(detections):
@@ -119,17 +141,16 @@ def calculate_reference_change(detections):
 
 def calculate_object_stats(detections):
     detections = detections.repartition("oid")
-    detections.filter(col('oid')=='ZTF22abuviyj').show()
     detections = calculate_ndets_oid(detections)
     detections = deltajd(detections)
     detections = correct_coordinates(detections)
     detections = select_corrected_stellar_firstmjd(detections)
     detections = calculate_reference_change(detections)
     detections = calculate_diffpos(detections)
-    detections.filter(col('oid')=='ZTF18abvtinv').show()
-    detections = detections.dropDuplicates(["oid", "sid", "fid"])
+    detections = create_hist_columns(detections)
+    #detections.filter(col('oid')=='ZTF19abzlyqu').show()
+    detections = detections.dropDuplicates(["oid", "sid"])
     detections = detections.select("oid", "ndet", "first_mjd", "last_mjd", "deltajd", "meanra", "meandec", "sigmara", "sigmadec", "sid", "fid", "stellar", "corrected", "diffpos", "reference_change")
-    detections.filter(col('oid')=='ZTF22abuviyj').show()
     return detections
 
 
@@ -141,13 +162,13 @@ def calculate_ndets_magstats(detections):
     detections = detections.withColumn("ndet", F.count("*").over(window_spec))
     return detections
 
-def first_mjd_magstats(detections):
+def firstmagstats(detections):
     detections = detections.repartition("oid")
     window_spec = Window.partitionBy("oid", "sid", "fid")
     detections = detections.withColumn("first_mjd", F.min("mjd").over(window_spec))
     return detections
 
-def last_mjd_magstats(detections):
+def lastmagstats(detections):
     detections = detections.repartition("oid")
     window_spec = Window.partitionBy("oid", "sid", "fid")
     detections = detections.withColumn("last_mjd", F.max("mjd").over(window_spec))
@@ -256,8 +277,8 @@ def calculate_dmdt(detections, non_detections):
 def calculate_magstats(detections, non_detections):
     # Calculate various statistics
     detections = calculate_ndets_magstats(detections)
-    detections = first_mjd_magstats(detections)
-    detections = last_mjd_magstats(detections)
+    detections = firstmagstats(detections)
+    detections = lastmagstats(detections)
     detections = calculate_mags_magstats(detections)    
     detections = calculate_first_last_mag(detections) 
     detections = calculate_stellar_corrected_magstats(detections)
@@ -273,7 +294,9 @@ def execute_magstats_step(correction_df):
     non_detections =correction_df.select(col("non_detections"))
     detections = explode_detections(detections)
     #contiene columnas necesarias para magstats. Sobran en objstats
-    columns_keep_detections = ["oid", "candid", "forced", "mjd", "e_ra", "e_dec", "ra", "dec", "sid", "fid", "stellar", "corrected", "mag", "mag_corr", "dubious", "e_mag", "isdiffpos", "extra_fields.jdendref"] 
+    columns_keep_detections = ["oid", "candid", "forced", "mjd", "e_ra", "e_dec", "ra", "dec", "sid", "fid", "stellar", "corrected", "mag", "mag_corr", "dubious", "e_mag", "isdiffpos", "extra_fields.jdendref", "extra_fields.ndethist", "extra_fields.ncovhist", "extra_fields.jdstarthist", "extra_fields.jdendhist"] 
+    #columns_keep_detections = ["oid", "candid", "forced", "mjd", "e_ra", "e_dec", "ra", "dec", "sid", "fid", "stellar", "corrected", "mag", "mag_corr", "dubious", "e_mag", "isdiffpos", "extra_fields.jdendref"] 
+
     detections = detections.select(*columns_keep_detections)
     detections = get_non_forced(detections)
     detections = drop_dupes_detection(detections)
