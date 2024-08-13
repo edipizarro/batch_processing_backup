@@ -339,7 +339,7 @@ def aid_replacer(df):
 
 ############################### EXECUTE ##############################################
 
-def run_sorting_hat_step(avro_parquets_dir, spark):
+def run_sorting_hat_step(spark: SparkSession, avro_parquets_dir):
     df = load_dataframes(avro_parquets_dir, spark)
     df = df_sorting_hat(df)
     sorted_columns_df = sorted(df.columns)

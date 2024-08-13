@@ -85,7 +85,6 @@ def correct_coordinates(non_forced):
                                        .withColumn("sigmara", 3600.0 * sqrt(1 / col("total_weight_e_ra"))) \
                                        .withColumn("meandec", col("weighted_sum_dec") / col("total_weight_e_dec")) \
                                        .withColumn("sigmadec", 3600.0 * sqrt(1 / col("total_weight_e_dec"))) 
-    corrected_coords.filter(col('oid')=='ZTF19abzlyqu').show(truncate=False)
     corrected_coords = corrected_coords.drop("weighted_sum_ra", "weighted_sum_dec", "total_weight_e_ra", "total_weight_e_dec", "e_ra_arcsec", "e_dec_arcsec", "weighted_e_ra", "weighted_e_dec", "weighted_sum_ra", "weighted_sum_dec", "total_weight_e_ra", "total_weight_e_dec") 
 
     return corrected_coords
@@ -104,8 +103,6 @@ def create_hist_columns(detections):
                                 .withColumn("mjdendhist", first("recent_endhist").over(window_spec_fill))
      
     detections = detections.drop("max_mjd", "recent_ndethist", "recent_ncovhist", "recent_starthist", "recent_endhist")
-    detections.filter(col('oid')=='ZTF19abzlyqu').show()
-    detections.show()
     return detections
 
 
@@ -148,7 +145,6 @@ def calculate_object_stats(detections):
     detections = calculate_reference_change(detections)
     detections = calculate_diffpos(detections)
     detections = create_hist_columns(detections)
-    #detections.filter(col('oid')=='ZTF19abzlyqu').show()
     detections = detections.dropDuplicates(["oid", "sid"])
     detections = detections.select("oid", "ndet", "first_mjd", "last_mjd", "deltajd", "meanra", "meandec", "sigmara", "sigmadec", "sid", "fid", "stellar", "corrected", "diffpos", "reference_change")
     return detections
@@ -267,12 +263,6 @@ def calculate_dmdt(detections, non_detections):
     joined_df = joined_df.drop(*drop_columns)
     return joined_df
     
-    """
-    #selecting last nd of each oid (meaning, newest non-detection)...
-    joined_dets_ndets_dt_min = joined_dets_ndets_dt_min.sort('mjdnd', ascending=False).dropDuplicates(["oid", "sid", "fid"])
-    joined_dets_ndets_dt_min.sort('oid').show()
-    """
-
 
 def calculate_magstats(detections, non_detections):
     # Calculate various statistics

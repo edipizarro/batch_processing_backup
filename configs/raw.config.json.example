@@ -8,7 +8,6 @@
         "CompressedAvros": "compressed_avros",
         "UncompressedAvros": "uncompressed_avros",
         "RawParquet": "raw_parquet",
-        "PSQLParquet": "psql_parquet"
     },
     "BatchSize": 3250,
     "ParquetCompression": "snappy",
