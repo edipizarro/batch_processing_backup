@@ -13,18 +13,22 @@ and storage.
     "UrlSourceBase": "https://ztf.uw.edu/alerts/public/",
     "UrlSourceFilePrefix": "ztf_public_",
     "UrlSourceFilePostfix": ".tar.gz",
-    "DataFolder": "/home/alerce/batch_processing/data",
-    "CompressedAvrosFolder": "compressed_avros",
-    "UncompressedAvrosFolder": "uncompressed_avros",
-    "RawParquetFolder": "parquet",
-    "BatchSize": 2500,
+    "DataFolder": "/home/user/alerce/batch_processing/batch_processing/data",
+    "S3Bucket": "batch-processing-test-data-1",
+    "SubDataFolder": {
+        "CompressedAvros": "compressed_avros",
+        "UncompressedAvros": "uncompressed_avros",
+        "RawParquet": "raw_parquet",
+    },
+    "BatchSize": 3250,
     "ParquetCompression": "snappy",
     "DeleteData": "false",
     "OverwriteData": "false",
-    "StartDate": "2023/12/26",
-    "EndDate": "2023/12/27",
+    "StartDate": "2023/12/01",
+    "EndDate": "2023/12/15",
     "DateFormat": "%Y/%m/%d"
 }
+
 ```
 
 ### Configuration Parameters:
@@ -37,11 +41,11 @@ and storage.
 
     4. `DataFolder` (string): Base folder where data files will be stored.
 
-    5. `CompressedAvrosFolder` (string): Subfolder for storing compressed Avro files.
+    5. `SubDataFolder.CompressedAvros` (string): Subfolder for storing compressed Avro files.
 
-    6. `UncompressedAvrosFolder` (string): Subfolder for storing uncompressed Avro files.
+    6. `SubDataFolder.UncompressedAvros` (string): Subfolder for storing uncompressed Avro files.
 
-    7. `RawParquetFolder` (string): Subfolder for storing Parquet files.
+    7. `SubDataFolder.RawParquet` (string): Subfolder for storing Parquet files.
 
     8. `BatchSize` (integer): Size of each batch for processing data.
 
@@ -56,34 +60,3 @@ and storage.
     13. `EndDate` (string): End date for data processing (format given by DateFormat).
 
     14. `DateFormat` (string): Format of dates in the configuration (e.g., "%Y/%m/%d").
-
-## ParquetReader Configuration
-
-This section provides an overview of the configuration parameters used by the 
-ParquetReader class. The configuration is specified in a JSON file and is used 
-to customize the behavior of the ParquetReader when reading and processing 
-Parquet files.
-
-### Configuration File: `read.config.json`
-
-```json
-{
-    "DataFolder": "/home/alerce/batch_processing/data",
-    "RawParquetFolder": "parquet",
-    "StartDate": "2023/12/26",
-    "EndDate": "2023/12/27",
-    "DateFormat": "%Y/%m/%d"
-}
-```
-
-### Configuration Parameters:
-
-    1. `DataFolder` (string): The base folder where Parquet files are located.
-
-    2. `RawParquetFolder` (string): Subfolder within DataFolder containing Parquet files.
-
-    3. `StartDate` (string): Start date for reading Parquet files (format: "YYYY/MM/DD").
-
-    4. `EndDate` (string): End date for reading Parquet files (format: "YYYY/MM/DD").
-
-    5. `DateFormat` (string): Format of dates in the configuration (e.g., "%Y/%m/%d").
