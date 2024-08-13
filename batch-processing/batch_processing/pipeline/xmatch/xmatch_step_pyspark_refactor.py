@@ -97,7 +97,7 @@ def execute_xmatch_requests(list_dataframe_pandas, parameters, dataframe_crossma
     return xmatch_batch_results, processed_batch, unprocessed_batch
 
 
-def execute_batchsizes(dataframe_spark):
+def execute_batchsizes(spark: SparkSession, dataframe_spark):
     print(f"Processing using a batch size of {_BATCH_SIZE} oids per request to CDS")
     dataframe_crossmatch = dataframe_spark.selectExpr("oid", "meanra as ra", "meandec as dec")
     dataframe_crossmatch = dataframe_crossmatch.dropDuplicates()

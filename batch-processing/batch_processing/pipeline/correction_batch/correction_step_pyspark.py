@@ -161,12 +161,18 @@ def correct(corrector_detections):
     return corrector_detections
 
 def restruct_extrafields(corrector_detections):
-    columns_not_extrafields = ['aid', 'candid', 'corrected', 'dec', 'dubious', 'e_dec', 'e_mag', 'e_mag_corr', 'e_mag_corr_ext', 'e_ra', 'fid', 'forced', 'has_stamp', 'isdiffpos', 'mag', 'mag_corr', 'mjd', 'oid', 'parent_candid', 'pid', 'ra', 'sid', 'stellar', 'tid', 'unparsed_fid', 'unparsed_isdiffpos', 'unparsed_jd', 'diffmaglim', 'nid', 'magap', 'sigmagap', 'distnr', 'rb', 'rbversion', 'magapbig', 'sigmagapbig', 'rfid' ]
+    columns_not_extrafields_fp_corrected = ['pid', 'oid', 'mjd', 'fid', 'ra', 'dec', 'e_ra', 'e_dec', 'mag', 'e_mag', 'mag_corr', 'e_mag_corr', 'e_mag_corr_ext', 'isdiffpos', 'corrected', 'dubious', 'parent_candid', 'has_stamp', 'field', 'rcid', 'rfid', 'sciinpseeing', 'scibckgnd', 'scisigpix', 'magzpsci', 'magzpsciunc', 'magzpscirms', 'clrcoeff', 'clrcounc', 'exptime', 'adpctdif1', 'adpctdif2', 'diffmaglim', 'programid', 'procstatus', 'distnr', 'ranr', 'decnr', 'magnr', 'sigmagnr', 'chinr', 'sharpnr']
+    columns_to_nest_fp_corrected = [col for col in corrector_detections.columns if col not in columns_not_extrafields_fp_corrected]
+    nested_col_fp_corrected = struct(*columns_to_nest_fp_corrected)
+    fp_corrected = corrector_detections.select('*', nested_col_fp_corrected.alias('extra_fields'))
+    fp_corrected = fp_corrected.select('adpctdif1', 'adpctdif2', 'chinr', 'clrcoeff', 'clrcounc', 'corrected', 'dec', 'decnr', 'diffmaglim', 'distnr', 'dubious', 'e_dec', 'e_mag', 'e_mag_corr', 'e_mag_corr_ext', 'e_ra', 'exptime', 'extra_fields', 'fid', 'field', 'has_stamp', 'isdiffpos', 'mag', 'mag_corr', 'magnr', 'magzpsci', 'magzpscirms', 'magzpsciunc', 'mjd', 'oid', 'parent_candid', 'pid', 'procstatus', 'programid', 'ra', 'ranr', 'rcid', 'rfid', 'scibckgnd', 'sciinpseeing', 'scisigpix', 'sharpnr', 'sigmagnr')
+  
+    columns_not_extrafields = ['aid', 'candid', 'corrected', 'dec', 'dubious', 'e_dec', 'e_mag', 'e_mag_corr', 'e_mag_corr_ext', 'e_ra', 'fid', 'forced', 'has_stamp', 'isdiffpos', 'mag', 'mag_corr', 'mjd', 'oid', 'parent_candid', 'pid', 'ra', 'sid', 'stellar', 'tid', 'unparsed_fid', 'unparsed_isdiffpos', 'unparsed_jd', 'diffmaglim', 'nid', 'magap', 'sigmagap', 'distnr', 'rb', 'rbversion', 'magapbig', 'sigmagapbig', 'rfid', 'drb', 'drbversion' ]
     columns_to_nest = [col for col in corrector_detections.columns if col not in columns_not_extrafields]
     nested_col = struct(*columns_to_nest)
     corrector_detections = corrector_detections.select('*', nested_col.alias('extra_fields'))
-    corrector_detections = corrector_detections.select('aid', 'candid', 'corrected', 'dec', 'diffmaglim', 'distnr', 'dubious', 'e_dec', 'e_mag', 'e_mag_corr', 'e_mag_corr_ext', 'e_ra', 'extra_fields', 'fid', 'forced', 'has_stamp', 'isdiffpos', 'mag', 'mag_corr', 'magap', 'magapbig', 'mjd', 'nid', 'oid', 'parent_candid', 'pid', 'ra', 'rb', 'rbversion', 'rfid', 'sid', 'sigmagap', 'sigmagapbig', 'stellar', 'tid', 'unparsed_fid', 'unparsed_isdiffpos', 'unparsed_jd')
-    return corrector_detections
+    corrector_detections = corrector_detections.select('aid', 'candid', 'corrected', 'dec', 'diffmaglim', 'distnr', 'drb', 'drbversion', 'dubious', 'e_dec', 'e_mag', 'e_mag_corr', 'e_mag_corr_ext', 'e_ra', 'extra_fields', 'fid', 'forced', 'has_stamp', 'isdiffpos', 'mag', 'mag_corr', 'magap', 'magapbig', 'mjd', 'nid', 'oid', 'parent_candid', 'pid', 'ra', 'rb', 'rbversion', 'rfid', 'sid', 'sigmagap', 'sigmagapbig', 'stellar', 'tid', 'unparsed_fid', 'unparsed_isdiffpos', 'unparsed_jd')  
+    return corrector_detections, fp_corrected
 
 
 def get_non_forced(corrector_detections):
@@ -236,7 +242,9 @@ def execute_corrector(lightcurve_df):
 
     print('Corrected detections:')
     corrector_detections = correct(corrector_detections)
-    corrector_detections = restruct_extrafields(corrector_detections)
+    restructured_detections =  restruct_extrafields(corrector_detections)
+    corrector_detections = restructured_detections[0]
+    forced_photometries = restructured_detections[1]
     non_forced = get_non_forced(corrector_detections)
     print('NON FORCED NUMBER OF ROWS: ', non_forced.count())
     non_forced = arcsec2dec_era_edec(non_forced)
@@ -248,13 +256,12 @@ def execute_corrector(lightcurve_df):
     non_detections = non_detections.drop_duplicates(["oid", "mjd", "fid"])
     sorted_columns_nondetections = sorted(non_detections.columns)
     non_detections = non_detections.select(*sorted_columns_nondetections)
-    corrector_detections.filter(col('oid')=='ZTF18aaeixba').show()
-    corrected_coordinates.filter(col('oid')=='ZTF19abzlyqu').show(truncate=False)
-    return corrector_detections, corrected_coordinates, non_detections, candids
+    detections_non_forced_corrected = non_forced
+    return corrector_detections, corrected_coordinates, non_detections, candids, forced_photometries, detections_non_forced_corrected
 
 
 def produce_correction(lightcurve_df):
-    corrector_detections, corrected_coordinates, non_detections, candids = execute_corrector(lightcurve_df)
+    corrector_detections, corrected_coordinates, non_detections, candids, forced_photometries, detections_non_forced_corrected = execute_corrector(lightcurve_df)
     print('Preparing output (joining results)...')
     oid_detections_df = corrector_detections.groupBy('oid').agg(collect_list(struct(corrector_detections.columns)).alias('detections'))
     non_detections = non_detections.groupBy('oid').agg(collect_list(struct(non_detections.columns)).alias('non_detections'))
@@ -270,4 +277,4 @@ def produce_correction(lightcurve_df):
         when(col("non_detections").isNotNull(), col("non_detections")).otherwise(array()).alias("non_detections")
     )
     print('CORRECTION STEP OUTPUT: ', correction_step_output.count())
-    return correction_step_output
+    return correction_step_output, forced_photometries, detections_non_forced_corrected
