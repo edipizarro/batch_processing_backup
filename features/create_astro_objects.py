@@ -1,4 +1,7 @@
 import pickle
+
+import pandas as pd
+
 from lc_classifier.features.core.base import AstroObject
 from lc_classifier.utils import create_astro_object
 from typing import List
@@ -9,9 +12,7 @@ class NoDetections(Exception):
 
 
 def dataframes_to_astro_object_list(detections, forced_photometry, xmatch):
-
     oids = detections["oid"].unique()
-    print(oids)
     astro_objects_list = []
     for oid in oids:
         xmatch_oid = xmatch[xmatch["oid"] == oid]
@@ -28,6 +29,5 @@ def dataframes_to_astro_object_list(detections, forced_photometry, xmatch):
     return astro_objects_list
 
 
-def save_batch(astro_objects: List[AstroObject], filename: str):
-    with open(filename, "wb") as f:
-        pickle.dump(astro_objects, f)
+def xmatch_df_to_astro_object_list(xmatch_dataframe: pd.DataFrame) -> List[AstroObject]:
+    return None
