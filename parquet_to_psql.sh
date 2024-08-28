@@ -2,7 +2,7 @@
 
 set -x # Debug mod
 
-export PATH=$PATH:/path/to/duckdb  # Adding duckdb to PATH.
+export PATH=$PATH:/path/to/duckdb  # NEED TO CHANGE TO YOUR LOCAL path to duckdb
 
 # PostgreSQL connection details
 PG_HOST="localhost"
@@ -18,8 +18,11 @@ process_parquet_to_postgres() {
 
     echo "Processing $parquet_file into table $table_name"
     
-    # Use full path to DuckDB (modify as needed)
+    # Use full path to DuckDB (modify as needed) # NEED TO CHANGE TO YOUR LOCAL path to duckdb
     /path/to/duckdb/duckdb -c "
+
+        INSTALL postgres;
+        LOAD postgres;
         ATTACH 'host=${PG_HOST} dbname=${$PG_DB} user=${$PG_USER} password=${PG_PASSWORD}' AS pg (TYPE postgres);
 
         INSERT INTO pg.${table_name} 
@@ -53,11 +56,11 @@ process_folder() {
 # Main execution
 main() {
     local parent_folder="$1"
-    local priority_folder="object" # In this casi, the object folder must be the first, so is procesed and then there is a loop for the other folders.
+    local priority_folder="object" # In this case, the object folder must be the first, so is procesed and then there is a loop for the other folders.
     local total_start_time=$(date +%s)
 
     if [ -z "$parent_folder" ]; then
-        echo "Usage: $0 /main/folder/of/parquets"
+        echo "Usage: $0 /main/folder/of/parquets" # (optional) NEED TO CHANGE TO YOUR LOCAL path
         exit 1
     fi
 
