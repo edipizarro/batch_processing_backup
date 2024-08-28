@@ -52,7 +52,7 @@ The folders are configured to work with the following structure:
 
 Is very important that the names of the folders coincide with the names of the tables in the database.
 
-For example if you want to put a parquet o some parquets into a PostgreSQL db with two tables named "table1" and "table2" you have to put the parquets in the following structure:
+For example if you want to put a parquet or some parquets into a PostgreSQL db with two tables named "table1" and "table2" you have to put the parquets in the following structure:
 
 ```
 /path/to/parquets
@@ -67,9 +67,9 @@ For example if you want to put a parquet o some parquets into a PostgreSQL db wi
 
 To run the script you have to execute the following commands:
 
-- cd /path/to/parquet_to_postgresql_converter
+- cd /path/to/parquet_to_psql
 
-- ./parquet_to_postgresql.sh /path/to/parquets
+- ./parquet_to_psql.sh /path/to/parquets
 
 # Using DuckDB
 
