@@ -1,18 +1,10 @@
-from datetime import datetime, timedelta
-import glob
 import logging
 import os
+import sys
+from datetime import datetime, timedelta
 
 import polars
 
-def path_exists(path, s3: bool = False, spark_context = None):
-    if s3:
-        hpath = spark_context._jvm.org.apache.hadoop.fs.Path(path)
-        fs = hpath.getFileSystem(spark_context._jsc.hadoopConfiguration())
-        return len(fs.globStatus(hpath)) > 0
-    else:
-        paths = glob.glob(path, recursive=True)
-        return len(paths) > 0
 
 def date_to_mjd(date: datetime) -> str:
     """
@@ -28,37 +20,42 @@ def date_to_mjd(date: datetime) -> str:
     mjd = (date - reference_date).days
     return str(mjd)
 
-def str_to_date(date: str, format: str ="%Y/%m/%d"):
+
+def str_to_date(date: str, format: str = "%Y/%m/%d"):
     return datetime.strptime(date, format)
+
 
 def dates_between_generator(StartDate, EndDate):
     for n in range(int((EndDate - StartDate).days) + 1):
         yield StartDate + timedelta(n)
 
-def configure_logger():
-    # Configure logger
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
 
-    # Create a stream handler and set its level to INFO
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(logging.INFO)
+def configure_logger():
+    # Create a stream handlers
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stderr_handler = logging.StreamHandler(sys.stderr)
+
+    # Set loggin level
+    stdout_handler.setLevel(logging.INFO)
+    stderr_handler.setLevel(logging.ERROR)
 
     # Create a formatter and set it to the handler
-    formatter = logging.Formatter('%(levelname)s - %(message)s')
-    stream_handler.setFormatter(formatter)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    stdout_handler.setFormatter(formatter)
+    stderr_handler.setFormatter(formatter)
 
-    # Add the stream handler to the logger
-    logger.addHandler(stream_handler)
+    # Configure logger
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(stdout_handler)
+    logger.addHandler(stderr_handler)
 
     return logger
 
-def _init_path(directory: str):
-    # Check if the directory exists, create it if not
-    if not os.path.exists(directory):
-        os.makedirs(directory)
 
-def _rm_directory_or_file( path):
+def _rm_directory_or_file(path):
     if os.path.isfile(path):
         os.remove(path)
     elif os.path.isdir(path):
@@ -80,6 +77,7 @@ def _rm_directory_or_file( path):
 
         # rm folder
         os.rmdir(path)
+
 
 def drop_polars_columms(df: polars.DataFrame, columns: list[str]):
     for column in columns:
