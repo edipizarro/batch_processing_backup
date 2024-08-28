@@ -1,43 +1,43 @@
 # Parquet to PostgreSQL Converter
 This script provides a solution to convert Parquet files to PostgreSQL databases using DuckDB as an intermediary.
 
-## Requirements
+# Requirements
 
 - Python 3.8+
 - DuckDB
 - PostgreSQL
 
-## Installing DuckDB (Below you can find the instructions for use DuckDB manually)
+# Installing DuckDB (Below you can find the instructions for use DuckDB manually)
 
-# Install the necessary dependencies
+## Install the necessary dependencies
 
 apt update $$ apt install -y wget unzip python3 python3-pip
 
-# Download DuckDB from Github
+## Download DuckDB from Github
 wget https://github.com/duckdb/duckdb/releases/download/v1.0.0/duckdb_cli-linux-amd64zip
 
-# You can also download it from the main page: 
+## You can also download it from the main page: 
 
 https://duckdb.org/docs/installation/?version=stable&environment=cli&platform=linux&download_method=direct&architecture=x86_64
 
-# We decompress the zip
+## We decompress the zip
 
 unzip duckdb_cli-linux-amd64.zip
 
-# Run duckdb if you want
+## Run duckdb if you want
 
 cd .../duckdb
 
 ./duckdb
 
 
-## Configuration
+# Configuration
 
 You have to put your local or remote PostgreSQL connection variables in the first lines on the .sh file.
 
 Then you need to change the duckdb paths in the .sh file to your local paths.
 
-## Folders configuration
+# Folders configuration
 
 The folders are configured to work with the following structure:
 
@@ -59,7 +59,7 @@ For example if you want to put a parquet o some parquets into a PostgreSQL db wi
 └── table2/
     └── file3.parquet
 
-## Runnig the script
+# Runnig the script
 
 To run the script you have to execute the following commands:
 
@@ -67,46 +67,46 @@ To run the script you have to execute the following commands:
 
 - ./parquet_to_postgresql.sh /path/to/parquets
 
-## Using DuckDB
+# Using DuckDB
 
-# Conection to DuckDB
+## Conection to DuckDB
 
 cd .../duckdb
 ./duckdb
 
-# Conection of PosgreSQL
+## Conection of PosgreSQL
 
-# We can initiate postgresql with the following command:
+## We can initiate postgresql with the following command:
 sudo -u postgres psql
 
-# We can create a database with the following command:
+## We can create a database with the following command:
 sudo -u postgres createdb dbname 
 
-## Conection of DuckDB with PostgreSQL
+# Conection of DuckDB with PostgreSQL
 
-# We can connect DuckDB with PostgreSQL with the following command:
+## We can connect DuckDB with PostgreSQL with the following command:
 	ATTACH 'host=localhost dbname=dbname user=user password=password' AS name_to_use_inside_duckdb (TYPE postgres);
 
-# We can see all the tables with the following command:
+## We can see all the tables with the following command:
 	show all tables;
-# We can see an specific table with the following command:
+## We can see an specific table with the following command:
 	select * from name_to_use_inside_duckdb.table_name
 
 
-## If you want to create a new table from a parquet file in DuckDB:
+# If you want to create a new table from a parquet file in DuckDB:
 
 CREATE TABLE postgres_db.name_to_use_inside_duckdb  (
 “Type of variables per column”);
 
-# We copy all the data from the parquet file to the table in DuckDB:
+## We copy all the data from the parquet file to the table in DuckDB:
 
 copy postgres_db.name_to_use_inside_duckdb from 'your_file.parquet'
 
-# We can see the data in the table with the following command:
+## We can see the data in the table with the following command:
 
 select * from postgres_db.name_to_use_inside_duckdb
 
-## If you want to insert the data from a parquet file into an existing table in DuckDB:
+# If you want to insert the data from a parquet file into an existing table in DuckDB:
 
 insert into name_to_use_inside_duckdb.existing_table select * from 'your_file.parquet';
 
