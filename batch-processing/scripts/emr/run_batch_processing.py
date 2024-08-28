@@ -2,6 +2,7 @@ import argparse
 import logging
 import time
 
+from pyspark import SparkContext
 from pyspark.sql import SparkSession
 
 from batch_processing.pipeline import (
@@ -212,7 +213,9 @@ def main():
                 write_parquet(unprocessed, OUTPUT_PATH + "/unprocessed")
 
             xmatch_step_result = xmatch_step.repartition("oid")
-            write_parquet(xmatch_step_result, OUTPUT_PATH + "/xmatch")
+            xmatch_bc = SparkContext.broadcast(xmatch_step_result)
+            write_parquet(xmatch_bc, OUTPUT_PATH + "/xmatch")
+            xmatch_bc.destroy()
 
         spark.stop()
 
