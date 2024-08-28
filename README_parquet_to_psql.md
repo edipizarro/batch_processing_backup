@@ -26,7 +26,7 @@ unzip duckdb_cli-linux-amd64.zip
 
 ## Run duckdb if you want
 
-cd .../duckdb
+cd /path/to/duckdb
 
 ./duckdb
 
@@ -75,7 +75,7 @@ To run the script you have to execute the following commands:
 
 ## Conection to DuckDB
 
-cd .../duckdb
+cd /path/to/duckdb
 ./duckdb
 
 ## Conection of PosgreSQL
