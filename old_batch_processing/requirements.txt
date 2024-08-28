@@ -1,6 +1,0 @@
-click
-numpy
-pandas==1.0.5
-psrecord
-# pyarrow
-psycopg2-binary
