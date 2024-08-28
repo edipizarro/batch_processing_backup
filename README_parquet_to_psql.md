@@ -41,23 +41,27 @@ Then you need to change the duckdb paths in the .sh file to your local paths.
 
 The folders are configured to work with the following structure:
 
+```
 /path/to/parquets
 ├── folder1/
 │   ├── file1.parquet
 │   └── file2.parquet
 └── folder2/
     └── file3.parquet
+```
 
 Is very important that the names of the folders coincide with the names of the tables in the database.
 
 For example if you want to put a parquet o some parquets into a PostgreSQL db with two tables named "table1" and "table2" you have to put the parquets in the following structure:
 
+```
 /path/to/parquets
 ├── table1/
 │   ├── file1.parquet
 │   └── file2.parquet
 └── table2/
-    └── file3.parquet
+    └── file3.parquet 
+```
 
 # Runnig the script
 
