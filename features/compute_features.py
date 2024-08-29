@@ -30,7 +30,7 @@ def extract_features_many_files(aos_input_dir: str, output_dir: str, n_jobs: int
             )
         )
 
-    Parallel(n_jobs=n_jobs, verbose=11, backend="loky")(tasks)
+    Parallel(n_jobs=n_jobs, verbose=0, backend="loky")(tasks)
 
 
 def extract_features(input_filename, output_filename, skip_if_output_exists=False):

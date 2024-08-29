@@ -19,7 +19,7 @@ engine = sa.create_engine(
 )
 engine.begin()
 
-oids = ["ZTF19aaxqrku", "ZTF18aavoomb", "ZTF20aatqgeo", "ZTF24aahxmmu"]
+oids = ["ZTF19aaxqrku", "ZTF18aavoomb", "ZTF20aatqgeo", "ZTF24aahxmmu", "ZTF18abfydvt"]
 oids = [f"'{oid}'" for oid in oids]
 
 query_detections = f"""
