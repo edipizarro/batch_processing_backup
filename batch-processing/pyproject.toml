@@ -20,9 +20,6 @@ scipy = "^1.12.0"
 pymongo = "^4.6.2"
 cramjam = "^2.8.3"
 
-[tool.poetry.group.arm.dependencies]
-connectorx = {path = "libs/connectorx-0.3.3-cp39-cp39-manylinux_2_34_aarch64.whl"}
-
 [tool.poetry.group.dev.dependencies]
 performance-timer = {path = "libs/performance_timer", develop = false}
 
