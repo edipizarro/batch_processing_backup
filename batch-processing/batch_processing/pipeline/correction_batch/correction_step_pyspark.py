@@ -17,9 +17,10 @@ def separate_dataframe_lc_df(lightcurve_df):
 
 def init_corrector(detections):
     df2 = detections.repartition("oid")
-    corrector_detections = df2.dropDuplicates(subset=["candid", "oid"]).select("oid", "aid", "candid", "dec", "e_dec", "e_mag", "e_ra", "fid", "forced", "has_stamp",
-                                                                               "isdiffpos", "mag", "mjd", "parent_candid", "pid", "ra","sid", "tid", "unparsed_fid",
-                                                                                "unparsed_isdiffpos", "unparsed_jd", "extra_fields.*")
+    corrector_detections = df2.dropDuplicates(subset=["candid", "oid"]).select("oid", "aid", "candid", "dec", "distnr", "distpsnr1", "chinr", "sharpnr", "magnr", "sigmagnr","sgscore1", "e_dec", "e_mag", "e_ra", "fid", "forced", "has_stamp",
+                                                                               "isdiffpos", "mag", "mjd", "is_first_corrected", "parent_candid", "pid", "ra","sid", "tid", "parsed_fid",
+                                                                                "unparsed_isdiffpos", "unparsed_jd", "extra_fields.*", 'adpctdif1', 'adpctdif2', 'procstatus', 'scibckgnd', 'sciinpseeing', 'scisigpix')
+    
     return corrector_detections
 
 
@@ -29,18 +30,11 @@ def is_corrected_func(corrector_detections):
     return corrector_detections
 
 def is_first_corrected(corrector_detections):
-    #! Corregir uso de la window
-    window_spec = Window.partitionBy("oid", "fid").orderBy("mjd")
-    corrector_detections = corrector_detections.withColumn("min_mjd", F.min("mjd").over(window_spec))
-    corrector_detections = corrector_detections.withColumn("is_first_corrected", 
-                                                           F.when(F.col("mjd") == F.min("mjd").over(window_spec), True)
-                                                           .otherwise(False))
-    corrector_detections = corrector_detections.drop("min_mjd")
     return corrector_detections
 
 
 def is_dubious_func(corrector_detections):
-    corrector_detections = corrector_detections.withColumn("is_negative", when(corrector_detections["isdiffpos"] == -1, True).otherwise(False))
+    corrector_detections = corrector_detections.withColumn("is_negative", when(col("isdiffpos") == -1, True).otherwise(False))
     corrector_detections = is_corrected_func(corrector_detections)
     corrector_detections = is_first_corrected(corrector_detections)
 
@@ -50,7 +44,7 @@ def is_dubious_func(corrector_detections):
         (~col("is_first_corrected") & col("corrected"))
     )
     corrector_detections = corrector_detections.withColumn("dubious", is_dubious_condition)\
-                                               .drop("is_negative", "is_first_corrected")
+                                               .drop(col("is_negative"), col("is_first_corrected"))
     return corrector_detections
 
 def is_stellar_func(corrector_detections):
@@ -74,7 +68,7 @@ def is_stellar_func(corrector_detections):
 
     # Apply is_stellar_condition and drop unnecessary columns
     corrector_detections = corrector_detections.withColumn("stellar", is_stellar_condition)\
-                                               .drop("near_ps1", "stellar_ps1", "near_ztf", "stellar_ztf")
+                                               .drop(col("near_ps1"), col("stellar_ps1"), col("near_ztf"), col("stellar_ztf"))
 
     return corrector_detections
 
@@ -89,18 +83,17 @@ def infinities_replacer(corrector_detections):
     
     columns_to_select = [col(column_name) for column_name in corrector_detections.columns 
                      if column_name not in ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]]
-    
     corrector_detections = corrector_detections.select(
         *columns_to_select,
-        when(corrector_detections["mag_corr"] == float('inf'), _ZERO_MAG)
-            .when(corrector_detections["mag_corr"] == float('-inf'), None)
-            .otherwise(corrector_detections["mag_corr"]).alias("mag_corr"),
-        when(corrector_detections["e_mag_corr"] == float('inf'), _ZERO_MAG)
-            .when(corrector_detections["e_mag_corr"] == float('-inf'), None)
-            .otherwise(corrector_detections["e_mag_corr"]).alias("e_mag_corr"),
-        when(corrector_detections["e_mag_corr_ext"] == float('inf'), _ZERO_MAG)
-            .when(corrector_detections["e_mag_corr_ext"] == float('-inf'), None)
-            .otherwise(corrector_detections["e_mag_corr_ext"]).alias("e_mag_corr_ext")
+        when(col("mag_corr") == float('inf'), _ZERO_MAG)
+            .when(col("mag_corr") == float('-inf'), None)
+            .otherwise(col("mag_corr")).alias("mag_corr"),
+        when(col("e_mag_corr") == float('inf'), _ZERO_MAG)
+            .when(col("e_mag_corr") == float('-inf'), None)
+            .otherwise(col("e_mag_corr")).alias("e_mag_corr"),
+        when(col("e_mag_corr_ext") == float('inf'), _ZERO_MAG)
+            .when(col("e_mag_corr_ext") == float('-inf'), None)
+            .otherwise(col("e_mag_corr_ext")).alias("e_mag_corr_ext")
     )
     return corrector_detections
 
@@ -111,9 +104,9 @@ def not_corrected_func(corrector_detections):
 
     corrector_detections = corrector_detections.select(
         *columns_to_select,
-        when(corrector_detections["corrected"] == False, None).otherwise(corrector_detections["mag_corr"]).alias("mag_corr"),
-        when(corrector_detections["corrected"] == False, None).otherwise(corrector_detections["e_mag_corr"]).alias("e_mag_corr"),
-        when(corrector_detections["corrected"] == False, None).otherwise(corrector_detections["e_mag_corr_ext"]).alias("e_mag_corr_ext"))
+        when(col("corrected") == False, None).otherwise(col("mag_corr")).alias("mag_corr"),
+        when(col("corrected") == False, None).otherwise(col("e_mag_corr")).alias("e_mag_corr"),
+        when(col("corrected") == False, None).otherwise(col("e_mag_corr_ext")).alias("e_mag_corr_ext"))
 
     return corrector_detections
 
@@ -140,17 +133,17 @@ def correct(corrector_detections):
     mask_condition_mag = isclose(corrector_detections["mag"], _ZERO_MAG_col)
     # Apply mask for 'mag_corr' and related columns
     corrector_detections = corrector_detections.withColumn("mask", when(mask_condition_mag, True).otherwise(False))\
-                                               .withColumn("mag_corr", when(mask_condition_mag, float('inf')).otherwise(corrector_detections["mag_corr"]))\
-                                               .withColumn("e_mag_corr", when(mask_condition_mag, float('inf')).otherwise(corrector_detections["e_mag_corr"]))\
-                                               .withColumn("e_mag_corr_ext", when(mask_condition_mag, float('inf')).otherwise(corrector_detections["e_mag_corr_ext"]))
+                                               .withColumn("mag_corr", when(mask_condition_mag, float('inf')).otherwise(col("mag_corr")))\
+                                               .withColumn("e_mag_corr", when(mask_condition_mag, float('inf')).otherwise(col("e_mag_corr")))\
+                                               .withColumn("e_mag_corr_ext", when(mask_condition_mag, float('inf')).otherwise(col("e_mag_corr_ext")))
     # Mask condition for 'e_mag'
     mask_condition_e_mag = isclose(corrector_detections["e_mag"], _ZERO_MAG_col)
     # Apply mask for 'e_mag_corr' and related columns
     corrector_detections = corrector_detections.withColumn("mask", when(mask_condition_e_mag, True).otherwise(False))\
-                                               .withColumn("e_mag_corr", when(mask_condition_e_mag, float('inf')).otherwise(corrector_detections["e_mag_corr"]))\
-                                               .withColumn("e_mag_corr_ext", when(mask_condition_e_mag, float('inf')).otherwise(corrector_detections["e_mag_corr_ext"]))
+                                               .withColumn("e_mag_corr", when(mask_condition_e_mag, float('inf')).otherwise(col("e_mag_corr")))\
+                                               .withColumn("e_mag_corr_ext", when(mask_condition_e_mag, float('inf')).otherwise(col("e_mag_corr_ext")))
     # Drop intermediate and unnecessary columns
-    corrector_detections = corrector_detections.drop('aux1', 'aux2', 'aux3', 'aux4', 'mask')
+    corrector_detections = corrector_detections.drop(col('aux1'), col('aux2'), col('aux3'), col('aux4'), col('mask'))
     # Sort columns
     sorted_columns = sorted(corrector_detections.columns)
     corrector_detections = corrector_detections.select(*sorted_columns)
@@ -161,18 +154,20 @@ def correct(corrector_detections):
     return corrector_detections
 
 def restruct_extrafields(corrector_detections):
-    columns_not_extrafields_fp_corrected = ['pid', 'oid', 'mjd', 'fid', 'ra', 'dec', 'e_ra', 'e_dec', 'mag', 'e_mag', 'mag_corr', 'e_mag_corr', 'e_mag_corr_ext', 'isdiffpos', 'corrected', 'dubious', 'parent_candid', 'has_stamp', 'field', 'rcid', 'rfid', 'sciinpseeing', 'scibckgnd', 'scisigpix', 'magzpsci', 'magzpsciunc', 'magzpscirms', 'clrcoeff', 'clrcounc', 'exptime', 'adpctdif1', 'adpctdif2', 'diffmaglim', 'programid', 'procstatus', 'distnr', 'ranr', 'decnr', 'magnr', 'sigmagnr', 'chinr', 'sharpnr']
-    columns_to_nest_fp_corrected = [col for col in corrector_detections.columns if col not in columns_not_extrafields_fp_corrected]
+    fp_detections = corrector_detections.filter(col('forced')==True)
+    columns_not_extrafields_fp_corrected = ['pid', 'candid', 'oid', 'mjd', 'fid', 'ra', 'dec', 'e_ra', 'e_dec', 'mag', 'e_mag', 'mag_corr', 'e_mag_corr', 'e_mag_corr_ext', 'isdiffpos', 'corrected', 'dubious', 'parent_candid', 'has_stamp', 'field', 'rcid', 'rfid', 'sciinpseeing', 'scibckgnd', 'scisigpix', 'magzpsci', 'magzpsciunc', 'magzpscirms', 'clrcoeff', 'clrcounc', 'exptime', 'adpctdif1', 'adpctdif2', 'diffmaglim', 'programid', 'procstatus', 'distnr', 'ranr', 'decnr', 'magnr', 'sigmagnr', 'chinr', 'sharpnr', 'sgscore1', 'distpsnr1', 'sgmag1', 'srmag1']
+    columns_to_nest_fp_corrected = [col for col in fp_detections.columns if col not in columns_not_extrafields_fp_corrected]
     nested_col_fp_corrected = struct(*columns_to_nest_fp_corrected)
-    fp_corrected = corrector_detections.select('*', nested_col_fp_corrected.alias('extra_fields'))
-    fp_corrected = fp_corrected.select('adpctdif1', 'adpctdif2', 'chinr', 'clrcoeff', 'clrcounc', 'corrected', 'dec', 'decnr', 'diffmaglim', 'distnr', 'dubious', 'e_dec', 'e_mag', 'e_mag_corr', 'e_mag_corr_ext', 'e_ra', 'exptime', 'extra_fields', 'fid', 'field', 'has_stamp', 'isdiffpos', 'mag', 'mag_corr', 'magnr', 'magzpsci', 'magzpscirms', 'magzpsciunc', 'mjd', 'oid', 'parent_candid', 'pid', 'procstatus', 'programid', 'ra', 'ranr', 'rcid', 'rfid', 'scibckgnd', 'sciinpseeing', 'scisigpix', 'sharpnr', 'sigmagnr')
+    fp_corrected = fp_detections.select('*', nested_col_fp_corrected.alias('extra_fields'))
+    fp_corrected = fp_corrected.select('adpctdif1', 'adpctdif2', 'candid', 'chinr', 'clrcoeff', 'clrcounc', 'corrected', 'dec', 'decnr', 'diffmaglim', 'distnr', 'dubious', 'e_dec', 'e_mag', 'e_mag_corr', 'e_mag_corr_ext', 'e_ra', 'exptime', 'extra_fields', 'fid', 'field', 'has_stamp', 'isdiffpos', 'mag', 'mag_corr', 'magnr', 'magzpsci', 'magzpscirms', 'magzpsciunc', 'mjd', 'oid', 'parent_candid', 'pid', 'procstatus', 'programid', 'ra', 'ranr', 'rcid', 'rfid', 'scibckgnd', 'sciinpseeing', 'scisigpix', 'sharpnr', 'sigmagnr', 'sgscore1', 'distpsnr1', 'sgmag1', 'srmag1')
   
-    columns_not_extrafields = ['aid', 'candid', 'corrected', 'dec', 'dubious', 'e_dec', 'e_mag', 'e_mag_corr', 'e_mag_corr_ext', 'e_ra', 'fid', 'forced', 'has_stamp', 'isdiffpos', 'mag', 'mag_corr', 'mjd', 'oid', 'parent_candid', 'pid', 'ra', 'sid', 'stellar', 'tid', 'unparsed_fid', 'unparsed_isdiffpos', 'unparsed_jd', 'diffmaglim', 'nid', 'magap', 'sigmagap', 'distnr', 'rb', 'rbversion', 'magapbig', 'sigmagapbig', 'rfid', 'drb', 'drbversion' ]
+    columns_not_extrafields = ['aid', 'candid', 'corrected', 'dec', 'dubious', 'e_dec', 'e_mag', 'e_mag_corr', 'e_mag_corr_ext', 'e_ra', 'fid', 'forced', 'has_stamp', 'isdiffpos', 'mag', 'mag_corr', 'mjd', 'oid', 'parent_candid', 'pid', 'ra', 'sid', 'stellar', 'tid', 'parsed_fid', 'unparsed_isdiffpos', 'unparsed_jd', 'diffmaglim', 'nid', 'magap', 'sigmagap', 'distnr', 'rb', 'rbversion', 'magapbig', 'sigmagapbig', 'rfid', 'drb', 'drbversion','sgscore1', 'distpsnr1', 'sgmag1', 'srmag1']
     columns_to_nest = [col for col in corrector_detections.columns if col not in columns_not_extrafields]
     nested_col = struct(*columns_to_nest)
     corrector_detections = corrector_detections.select('*', nested_col.alias('extra_fields'))
-    corrector_detections = corrector_detections.select('aid', 'candid', 'corrected', 'dec', 'diffmaglim', 'distnr', 'drb', 'drbversion', 'dubious', 'e_dec', 'e_mag', 'e_mag_corr', 'e_mag_corr_ext', 'e_ra', 'extra_fields', 'fid', 'forced', 'has_stamp', 'isdiffpos', 'mag', 'mag_corr', 'magap', 'magapbig', 'mjd', 'nid', 'oid', 'parent_candid', 'pid', 'ra', 'rb', 'rbversion', 'rfid', 'sid', 'sigmagap', 'sigmagapbig', 'stellar', 'tid', 'unparsed_fid', 'unparsed_isdiffpos', 'unparsed_jd')  
+    corrector_detections = corrector_detections.select('aid', 'candid', 'corrected', 'dec', 'diffmaglim', 'distnr', 'drb', 'drbversion', 'dubious', 'e_dec', 'e_mag', 'e_mag_corr', 'e_mag_corr_ext', 'e_ra', 'extra_fields', 'fid', 'forced', 'has_stamp', 'isdiffpos', 'mag', 'mag_corr', 'magap', 'magapbig', 'mjd', 'nid', 'oid', 'parent_candid', 'pid', 'ra', 'rb', 'rbversion', 'rfid', 'sid', 'sigmagap', 'sigmagapbig', 'stellar', 'tid', 'parsed_fid', 'unparsed_isdiffpos', 'unparsed_jd', 'sgscore1', 'distpsnr1', 'sgmag1', 'srmag1')  
     return corrector_detections, fp_corrected
+
 
 
 def get_non_forced(corrector_detections):
@@ -191,10 +186,11 @@ def create_weighted_columns(non_forced):
     return non_forced
 
 def correct_coordinates(non_forced):
+    
     non_forced = non_forced.repartition("oid")
     non_forced = arcsec2dec_era_edec(non_forced)
     non_forced = create_weighted_columns(non_forced)
-    window_spec = Window.partitionBy("oid")
+    window_spec = Window.partitionBy(col("oid"))
 
     non_forced = non_forced.withColumn("weighted_sum_ra", F.sum(F.col("ra") * F.col("weighted_e_ra")).over(window_spec)) \
                            .withColumn("weighted_sum_dec", F.sum(F.col("dec") * F.col("weighted_e_dec")).over(window_spec)) \
@@ -205,27 +201,7 @@ def correct_coordinates(non_forced):
                                        .withColumn("sigmara", 3600.0 * sqrt(1 / col("total_weight_e_ra"))) \
                                        .withColumn("meandec", col("weighted_sum_dec") / col("total_weight_e_dec")) \
                                        .withColumn("sigmadec", 3600.0 * sqrt(1 / col("total_weight_e_dec")))
-    
-    corrected_coords = corrected_coords.select("oid", "meanra", "meandec")
     return corrected_coords
-
-"""
-def correct_coordinates(non_forced):
-    # Calculate weighted sum of RA and weighted sum of Dec
-    weighted_coords = non_forced.groupBy("oid").agg(
-        sum(col("ra") * col("weighted_e_ra")).alias("weighted_sum_ra"),
-        sum(col("dec") * col("weighted_e_dec")).alias("weighted_sum_dec"),
-        sum("weighted_e_ra").alias("total_weight_e_ra"),
-        sum("weighted_e_dec").alias("total_weight_e_dec")
-    )
-
-    # Calculate mean RA and mean Dec
-    corrected_coords = weighted_coords.withColumn("meanra", col("weighted_sum_ra") / col("total_weight_e_ra"))\
-                                      .withColumn("meandec", col("weighted_sum_dec") / col("total_weight_e_dec"))\
-                                      .select("oid", "meanra", "meandec")
-
-    return corrected_coords
-"""
 
 def execute_corrector(lightcurve_df):
     detections, non_detections, candids = separate_dataframe_lc_df(lightcurve_df)
@@ -240,7 +216,7 @@ def execute_corrector(lightcurve_df):
     print('Completed is stellar')
 
 
-    print('Corrected detections:')
+    print('Correcting detections:')
     corrector_detections = correct(corrector_detections)
     restructured_detections =  restruct_extrafields(corrector_detections)
     corrector_detections = restructured_detections[0]
@@ -257,14 +233,16 @@ def execute_corrector(lightcurve_df):
     sorted_columns_nondetections = sorted(non_detections.columns)
     non_detections = non_detections.select(*sorted_columns_nondetections)
     detections_non_forced_corrected = non_forced
+    detections_non_forced_corrected = detections_non_forced_corrected.withColumn("step_id_corr", lit("objetivobatch_processing_fecha20082024"))
     return corrector_detections, corrected_coordinates, non_detections, candids, forced_photometries, detections_non_forced_corrected
 
 
 def produce_correction(lightcurve_df):
     corrector_detections, corrected_coordinates, non_detections, candids, forced_photometries, detections_non_forced_corrected = execute_corrector(lightcurve_df)
+
     print('Preparing output (joining results)...')
-    oid_detections_df = corrector_detections.groupBy('oid').agg(collect_list(struct(corrector_detections.columns)).alias('detections'))
-    non_detections = non_detections.groupBy('oid').agg(collect_list(struct(non_detections.columns)).alias('non_detections'))
+    oid_detections_df = corrector_detections.groupBy(col('oid')).agg(collect_list(struct(corrector_detections.columns)).alias('detections'))
+    non_detections = non_detections.groupBy(col('oid')).agg(collect_list(struct(non_detections.columns)).alias('non_detections'))
     candids = candids.repartition('oid')
     corrected_coordinates = corrected_coordinates.repartition('oid')
     oid_detections_df = oid_detections_df.repartition('oid')

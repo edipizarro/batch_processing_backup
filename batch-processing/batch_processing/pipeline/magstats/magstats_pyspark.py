@@ -85,7 +85,7 @@ def correct_coordinates(non_forced):
                                        .withColumn("sigmara", 3600.0 * sqrt(1 / col("total_weight_e_ra"))) \
                                        .withColumn("meandec", col("weighted_sum_dec") / col("total_weight_e_dec")) \
                                        .withColumn("sigmadec", 3600.0 * sqrt(1 / col("total_weight_e_dec"))) 
-    corrected_coords = corrected_coords.drop("weighted_sum_ra", "weighted_sum_dec", "total_weight_e_ra", "total_weight_e_dec", "e_ra_arcsec", "e_dec_arcsec", "weighted_e_ra", "weighted_e_dec", "weighted_sum_ra", "weighted_sum_dec", "total_weight_e_ra", "total_weight_e_dec") 
+    corrected_coords = corrected_coords.drop("ra", "dec", "weighted_sum_ra", "weighted_sum_dec", "total_weight_e_ra", "total_weight_e_dec", "e_ra_arcsec", "e_dec_arcsec", "weighted_e_ra", "weighted_e_dec", "weighted_sum_ra", "weighted_sum_dec", "total_weight_e_ra", "total_weight_e_dec", "e_ra", "e_dec") 
 
     return corrected_coords
 
@@ -135,6 +135,28 @@ def calculate_reference_change(detections):
     return detections
 
 
+def calculate_hist_columns(detections):
+    detections = detections.repartition("oid")
+    detections.filter(col('oid')=='ZTF19abzlyqu')
+    window_spec = Window.partitionBy("oid").orderBy("mjd")
+    detections = detections.withColumn("ndethist", F.last("ndethist").over(window_spec.rowsBetween(Window.unboundedPreceding, Window.unboundedFollowing)))
+    detections = detections.withColumn("ncovhist", F.last("ncovhist").over(window_spec.rowsBetween(Window.unboundedPreceding, Window.unboundedFollowing)))
+    detections = detections.withColumn("mjdstarthist", F.last("jdstarthist").over(window_spec.rowsBetween(Window.unboundedPreceding, Window.unboundedFollowing)) - 2400000.5) 
+    detections = detections.withColumn("mjdendref", F.last("jdendref").over(window_spec.rowsBetween(Window.unboundedPreceding, Window.unboundedFollowing)) - 2400000.5)
+    detections = detections.drop("jdstarthist", "jdendref")
+    return detections
+
+def create_g_r_columns(detections):
+    detections = detections.withColumn("g_r_max", lit(None).cast('double'))
+    detections = detections.withColumn("g_r_max_corr", lit(None).cast('double'))
+    detections = detections.withColumn("g_r_mean", lit(None).cast('double'))
+    detections = detections.withColumn("g_r_mean_corr", lit(None).cast('double'))
+    return detections
+
+def create_step_id_column(detections, step_id):
+    detections = detections.withColumn("step_id_corr", lit(step_id))
+    return detections
+
 
 def calculate_object_stats(detections):
     detections = detections.repartition("oid")
@@ -146,7 +168,10 @@ def calculate_object_stats(detections):
     detections = calculate_diffpos(detections)
     detections = create_hist_columns(detections)
     detections = detections.dropDuplicates(["oid", "sid"])
-    detections = detections.select("oid", "ndet", "first_mjd", "last_mjd", "deltajd", "meanra", "meandec", "sigmara", "sigmadec", "sid", "fid", "stellar", "corrected", "diffpos", "reference_change")
+    detections = create_g_r_columns(detections)
+    step_id = "batch_processing_DD/MM/YYYY"  #! Temporary here (and name!
+    detections = create_step_id_column(detections, step_id)
+    detections = detections.select("oid", "ndethist", "ncovhist", "mjdstarthist", "mjdendhist", "ndet", "first_mjd", "last_mjd", "deltajd", "g_r_max", "g_r_max_corr", "g_r_mean", "g_r_mean_corr", "meanra", "meandec", "sigmara", "sigmadec", "sid", "fid", "stellar", "corrected", "diffpos", "reference_change", "step_id_corr")
     return detections
 
 
@@ -178,8 +203,34 @@ def calculate_mags_magstats(detections):
                                      .withColumn("magmean", F.avg("mag").over(window)) \
                                      .withColumn("magsigma", F.stddev_pop("mag").over(window))
 
-    # Calculate median using approx_percentile
-    detections_with_stats = detections_with_stats.withColumn("magmedian", F.expr("percentile_approx(mag, 0.5)").over(window))
+    # Recalculate median but this time we are implementing our own median since percentile approx is not working as expected with odd values
+    window_spec_ordered = Window.partitionBy("oid", "fid", "sid").orderBy("mag")
+    count_window = Window.partitionBy("oid", "fid", "sid")
+    detections_with_stats = detections_with_stats.withColumn("rank", F.row_number().over(window_spec_ordered))
+    detections_with_stats = detections_with_stats.withColumn("count", F.count("mag").over(count_window))
+    
+    detections_with_stats = detections_with_stats.withColumn(
+    "median",
+    F.when(
+        F.col("count") % 2 == 1,  # Odd count
+        F.when(F.col("rank") == (F.col("count") + 1) / 2, F.col("mag"))
+    ).otherwise(  # Even count
+        F.when(
+            F.col("rank").isin(F.col("count") / 2, (F.col("count") / 2) + 1),  # Two middle values
+            F.col("mag")
+        )))
+
+    detections_with_stats = detections_with_stats.withColumn(
+    "median_calculated",
+    F.when(
+        F.col("count") % 2 == 0,  # Even count
+        (F.first("median", ignorenulls=True).over(window) + F.last("median", ignorenulls=True).over(window)) / 2
+    ).otherwise(
+        F.first("median", ignorenulls=True).over(window)
+    )
+    )
+
+    detections_with_stats = detections_with_stats.drop("rank", "count", "median").withColumnRenamed("median_calculated", "magmedian")
     return detections_with_stats
 
 def calculate_first_last_mag(detections):
@@ -206,7 +257,34 @@ def calculate_mags_corrected_magstats(detections):
                                      .withColumn("magmean_corr", F.avg("mag_corr").over(window)) \
                                      .withColumn("magsigma_corr", F.stddev_pop("mag_corr").over(window))
     
-    detections_with_stats = detections_with_stats.withColumn("magmedian_corr", F.expr("percentile_approx(mag_corr, 0.5)").over(window))
+    # Recalculate median but this time we are implementing our own median since percentile approx is not working as expected with odd values
+    window_spec_ordered = Window.partitionBy("oid", "fid", "sid").orderBy("mag")
+    count_window = Window.partitionBy("oid", "fid", "sid")
+    detections_with_stats = detections_with_stats.withColumn("rank", F.row_number().over(window_spec_ordered))
+    detections_with_stats = detections_with_stats.withColumn("count", F.count("mag_corr").over(count_window))
+    
+    detections_with_stats = detections_with_stats.withColumn(
+    "median",
+    F.when(
+        F.col("count") % 2 == 1,  # Odd count
+        F.when(F.col("rank") == (F.col("count") + 1) / 2, F.col("mag_corr"))
+    ).otherwise(  # Even count
+        F.when(
+            F.col("rank").isin(F.col("count") / 2, (F.col("count") / 2) + 1),  # Two middle values
+            F.col("mag_corr")
+        )))
+
+    detections_with_stats = detections_with_stats.withColumn(
+    "median_calculated",
+    F.when(
+        F.col("count") % 2 == 0,  # Even count
+        (F.first("median", ignorenulls=True).over(window) + F.last("median", ignorenulls=True).over(window)) / 2
+    ).otherwise(
+        F.first("median", ignorenulls=True).over(window)
+    )
+    )
+
+    detections_with_stats = detections_with_stats.drop("rank", "count", "median").withColumnRenamed("median_calculated", "magmedian_corr")
     return detections_with_stats
 
 def calculate_first_last_mag_corr(detections):
@@ -221,7 +299,7 @@ def calculate_dubious_magstats(detections):
     detections = detections.withColumn("dubious_numeric", F.col("dubious").cast("int"))
     window = Window.partitionBy("oid", "fid", "sid")
     detections = detections.withColumn("ndubious", F.sum("dubious_numeric").over(window))
-    detections = detections.drop("dubious_numeric")    
+    detections = detections.drop("dubious_numeric", "dubious")    
     return detections
 
 def calculate_saturation_rate(detections):
@@ -238,7 +316,7 @@ def calculate_saturation_rate(detections):
     return detections
 
 def calculate_dmdt(detections, non_detections):
-    dt_min = -999999    #! solo por testeo. El valor debiese ser 0.5!!!!!!!!!!!!!
+    dt_min = 0.5   
     detections = detections.repartition("oid")
     window_spec = Window.partitionBy("oid", "sid", "fid").orderBy("mjd")
     detections = detections.withColumn("min_mjd", F.min("mjd").over(window_spec.rowsBetween(Window.unboundedPreceding, Window.unboundedFollowing)))
@@ -251,15 +329,19 @@ def calculate_dmdt(detections, non_detections):
         .select("oid", "sid", "fid", col("mjd").alias("mjdnd"), "diffmaglim"))
     joined_df = detections.join(non_detections_dmdt, on=["oid", "sid", "fid"], how="left")
 
-    joined_df = joined_df.withColumn("dt", col("mjd") - col("mjdnd"))
-    joined_df = joined_df.withColumn("dm", col("mag") - col("diffmaglim"))
-    joined_df = joined_df.withColumn("sigmadm", col("e_mag") - col("diffmaglim"))
-    joined_df = joined_df.withColumn("dmdt", (col("mag") + col("e_mag") - col("diffmaglim")) / col("dt"))
-    condition = (col("dt") > dt_min) | (isnull(col("dt")))
-    joined_df = joined_df.filter(condition)
+    joined_df = joined_df.withColumn("dt_first", col("mjd") - col("mjdnd"))
+    joined_df = joined_df.withColumn("dm_first", col("mag") - col("diffmaglim"))
+    joined_df = joined_df.withColumn("sigmadm_first", col("e_mag") - col("diffmaglim"))
+    joined_df = joined_df.withColumn("dmdt_first", (col("mag") + col("e_mag") - col("diffmaglim")) / col("dt_first"))
+    condition = (col("dt_first") > dt_min) | (isnull(col("dt_first")))
+    joined_df = joined_df.withColumn("dmdt_first", when((col("dt_first") > dt_min) | isnull(col("dt_first")), col("dmdt_first")).otherwise(col("dmdt_first")))\
+                         .withColumn("dt_first", when((col("dt_first") > dt_min) | isnull(col("dt_first")), col("dt_first")).otherwise(col("dt_first")))\
+                         .withColumn("dm_first", when((col("dt_first") > dt_min) | isnull(col("dt_first")), col("dm_first")).otherwise(col("dm_first")))\
+                         .withColumn("sigmadm_first", when((col("dt_first") > dt_min) | isnull(col("dt_first")), col("sigmadm_first")).otherwise(col("sigmadm_first")))
+
     joined_df = joined_df.repartition('oid')
-    joined_df = joined_df.sort("dmdt").dropDuplicates(["oid", "sid", "fid"])
-    drop_columns = ['e_mag', 'dubious', 'mjdnd', 'candid', 'is_first_detection', 'mjd', 'e_ra', 'mag_corr', 'e_dec', 'diffmaglim','dec','forced','mag','ra']
+    joined_df = joined_df.sort("dmdt_first").dropDuplicates(["oid", "sid", "fid"])
+    drop_columns = ['e_mag', 'dubious', 'mjdnd', 'is_first_detection', 'mjd', 'mag_corr', 'diffmaglim','dec','mag','ra']
     joined_df = joined_df.drop(*drop_columns)
     return joined_df
     
@@ -277,25 +359,31 @@ def calculate_magstats(detections, non_detections):
     detections = calculate_dubious_magstats(detections)
     detections = calculate_saturation_rate(detections)
     detections = calculate_dmdt(detections, non_detections)
+
+    step_id = "batch_processing_DD/MM/YYYY"  #! Temporary here (and name!
+    detections = create_step_id_column(detections, step_id)
     return detections
 
 def execute_magstats_step(correction_df):
     detections = correction_df.select('detections')
     non_detections =correction_df.select(col("non_detections"))
     detections = explode_detections(detections)
-    #contiene columnas necesarias para magstats. Sobran en objstats
-    columns_keep_detections = ["oid", "candid", "forced", "mjd", "e_ra", "e_dec", "ra", "dec", "sid", "fid", "stellar", "corrected", "mag", "mag_corr", "dubious", "e_mag", "isdiffpos", "extra_fields.jdendref", "extra_fields.ndethist", "extra_fields.ncovhist", "extra_fields.jdstarthist", "extra_fields.jdendhist"] 
-    #columns_keep_detections = ["oid", "candid", "forced", "mjd", "e_ra", "e_dec", "ra", "dec", "sid", "fid", "stellar", "corrected", "mag", "mag_corr", "dubious", "e_mag", "isdiffpos", "extra_fields.jdendref"] 
+    # Columns to extract for magstats. Some of them are not necessary for magstats. Hist columns are not used in magstats, while others are not necessary for objectstats. 
+    # TODO: refactor so we extract on read only the necessary data, using this list on read of correction (reduce data transfer)
+    columns_keep_detections = ["oid", "candid", "forced", "mjd", "e_ra", "e_dec", "ra", "dec", "sid", "fid", "stellar", "corrected", "mag", "mag_corr", "dubious", "e_mag", "isdiffpos", "extra_fields.jdstarthist", "extra_fields.jdendref", "extra_fields.ndethist", "extra_fields.ncovhist", "extra_fields.jdendhist"] 
 
     detections = detections.select(*columns_keep_detections)
     detections = get_non_forced(detections)
+    detections = detections.drop("forced")
     detections = drop_dupes_detection(detections)
+    detections = detections.drop("candid")
     detections_objectstats = detections.drop(*["mag", "mag_corr", "dubious", "e_mag"])
     objectstats = calculate_object_stats(detections_objectstats)
 
     non_detections = explode_non_detections(non_detections)
     columns_keep_non_detections = ["oid", "sid", "fid", "mjd", "diffmaglim"]
     non_detections = non_detections.select(*columns_keep_non_detections)
-    magstats = calculate_magstats(detections, non_detections)
+    detections_magstats = detections.drop('jdendref', 'ndethist', 'ncovhist', 'jdstarthist', 'jdendhist')
+    magstats = calculate_magstats(detections_magstats, non_detections)
 
     return objectstats, magstats

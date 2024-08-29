@@ -4,15 +4,9 @@ import time
 
 from pyspark.sql import SparkSession
 
-from batch_processing.pipeline import (
-    correction,
-    create_dataframes,
-    lightcurve,
-    magstats,
-    prv_candidates,
-    sorting_hat,
-    xmatch,
-)
+from batch_processing.pipeline import (correction, create_dataframes,
+                                       lightcurve, magstats, prv_candidates,
+                                       sorting_hat, xmatch)
 from batch_processing.pipeline.spark_init.pyspark_configs import *
 
 # Setup logging

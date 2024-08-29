@@ -15,7 +15,6 @@ data
 
 # Configuration files
 *.json
-*.parquet
 *.python-version
 
 /.idea
