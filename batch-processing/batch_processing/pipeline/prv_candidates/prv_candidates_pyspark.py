@@ -177,6 +177,7 @@ def parse_extra_fields(df, type_of_detection):
         "sid",
         "mjd",
         "fid",
+        "mjd_alert",
         "unparsed_jd",
         "parsed_fid",
         "diffmaglim",

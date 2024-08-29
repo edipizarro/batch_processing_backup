@@ -3,7 +3,10 @@ from spark_init.pyspark_configs import *
 def create_non_detections_frame(df):
     non_detections_frame = df.select(F.explode("non_detections").alias("exploded_data"))
     non_detections_frame = non_detections_frame.repartition(col('oid'))
-    unique_non_detections = non_detections_frame.select("exploded_data.*").sort(col("mjd")).dropDuplicates(['oid', 'mjd'])
+    unique_non_detections = non_detections_frame.select("exploded_data.*")
+    window_spec = Window.partitionBy(col("oid"), col("mjd")).orderBy(F.col("mjd_alert").desc(), F.col("mjd").desc())
+    unique_non_detections = unique_non_detections.withColumn("rank", row_number().over(window_spec))
+    unique_non_detections = unique_non_detections.filter(col("rank") == 1).drop(col("rank")).drop(col("mjd_alert"))
     return unique_non_detections
 
 
@@ -36,7 +39,6 @@ def create_forced_photometries_frame(df):
     df_with_rank = fp_frame.withColumn("rank", row_number().over(window_spec))
     unique_fp = df_with_rank.filter(col("rank") == 1).drop(col("rank"))
     # Drop column alert mjd after being used for its purpose of deduplicating orderly 
-    unique_fp.drop(col('mjd_alert'))
     return unique_fp
 
 
