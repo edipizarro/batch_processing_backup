@@ -1,4 +1,4 @@
-from ..spark_init.pyspark_configs import *
+from spark_init.pyspark_configs import *
 # Otherwise remains with the same detections it outputs
 SKIP_MJD_FILTER = False
 
@@ -23,4 +23,3 @@ def execute_light_curve(detections, non_detections, forced_photometries):
     output_df = oid_detections_df.join(oid_non_detections_df, on='oid', how='left').join(candids, on='oid', how='left')
  
     return output_df
-

@@ -1,4 +1,4 @@
-from ..spark_init.pyspark_configs import *
+from spark_init.pyspark_configs import *
 import requests
 #import pyspark.pandas as pd
 import pandas as pd
@@ -97,7 +97,7 @@ def execute_xmatch_requests(list_dataframe_pandas, parameters, dataframe_crossma
     return xmatch_batch_results, processed_batch, unprocessed_batch
 
 
-def execute_batchsizes(spark: SparkSession, dataframe_spark):
+def execute_batchsizes(dataframe_spark):
     print(f"Processing using a batch size of {_BATCH_SIZE} oids per request to CDS")
     dataframe_crossmatch = dataframe_spark.selectExpr("oid", "meanra as ra", "meandec as dec")
     dataframe_crossmatch = dataframe_crossmatch.dropDuplicates()
@@ -114,7 +114,6 @@ def execute_batchsizes(spark: SparkSession, dataframe_spark):
     xmatches_query = execute_xmatch_requests(list_dataframes, xmatch_parameters, dataframe_crossmatch_chunks) 
 
     xmatches = xmatches_query[0]
-    print(xmatches)
     print(f'Number of oids matches with CDS (Allwise): {len(xmatches)}')
     processed_batch = xmatches_query[1]
     unprocessed_batch = xmatches_query[2]
@@ -140,14 +139,16 @@ def execute_batchsizes(spark: SparkSession, dataframe_spark):
                'eeMin', 'eePA', 'W1mag', 'W2mag', 'W3mag', 'W4mag', 'Jmag', 'Hmag', 'Kmag', 
                'e_W1mag', 'e_W2mag', 'e_W3mag', 'e_W4mag', 'e_Jmag', 'e_Hmag', 'e_Kmag', 'ID', 
                'ccf', 'ex', 'var', 'qph', 'pmRA', 'e_pmRA', 'pmDE', 'e_pmDE', 'd2M', 'W1-W2', 'W2-W3',
+               
                 F.col("expanded_columns.aid").alias("aid"),
                 F.col("expanded_columns.ra").alias("ra_oid"),
                 F.col("expanded_columns.dec").alias("dec_oid"), 
-                F.col("expanded_columns.forced").alias("forced"), 
-                F.col("expanded_columns.sgscore1").alias("sgscore1"), 
-                F.col("expanded_columns.distpsnr1").alias("distpsnr1"), 
-                F.col("expanded_columns.sgmag1").alias("sgmag1"), 
-                F.col("expanded_columns.srmag1").alias("srmag1"))
+                F.col("expanded_columns.forced").alias("forced"),
+                F.col("expanded_columns.sgscore1").alias("sgscore1"),
+                F.col("expanded_columns.distpsnr1").alias("distpsnr1"),
+                F.col("expanded_columns.sgmag1").alias("sgmag1"),
+                F.col("expanded_columns.srmag1").alias("srmag1")
+                )
     
     window_spec = Window.partitionBy("oid")
     # Replace the null values of the columns from alert, by using for each oid the data of one alert 
@@ -155,4 +156,10 @@ def execute_batchsizes(spark: SparkSession, dataframe_spark):
                    .withColumn("distpsnr1", first("distpsnr1", ignorenulls=True).over(window_spec)) \
                    .withColumn("sgmag1", first("sgmag1", ignorenulls=True).over(window_spec)) \
                    .withColumn("srmag1", first("srmag1", ignorenulls=True).over(window_spec))
+    
+    xmatch_step = xmatch_step.withColumn("catid", lit("allwise"))\
+                             .withColumn("class_catalog", lit(None).cast('string'))\
+                             .withColumn("period", lit(None).cast('string')) 
+    
+    
     return xmatch_step, unprocessed_batch

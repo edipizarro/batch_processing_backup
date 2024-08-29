@@ -1,31 +1,27 @@
-from ..spark_init.pyspark_configs import *
+from spark_init.pyspark_configs import *
 
 
 _ZERO_MAG = 100.0
 
 def modify_alert_fields(df):
-    extra_fields_columns = ['aimage', 'aimagerat', 'bimage', 'bimagerat', 'chinr', 'chipsf', 'classtar', 'clrcoeff', 'clrcounc', 'clrmed', 'clrrms', 'decnr', 'diffmaglim', 'distnr', 'distpsnr1', 'distpsnr2', 'distpsnr3', 'drb', 'drbversion', 'dsdiff', 'dsnrms', 'elong', 'exptime', 'field', 'fp_hists', 'fwhm', 'jdendhist', 'jdendref', 'jdstarthist', 'jdstartref', 'magap', 'magapbig', 'magdiff', 'magfromlim', 'maggaia', 'maggaiabright', 'magnr', 'magzpsci', 'magzpscirms', 'magzpsciunc', 'mindtoedge', 'nbad', 'ncovhist', 'ndethist', 'neargaia', 'neargaiabright', 'nframesref', 'nid', 'nmatches', 'nmtchps', 'nneg', 'objectidps1', 'objectidps2', 'objectidps3', 'pdiffimfilename', 'programid', 'programpi', 'prv_candidates', 'ranr', 'rb', 'rbversion', 'rcid', 'rfid', 'scorr', 'seeratio', 'sgmag1', 'sgmag2', 'sgmag3', 'sgscore1', 'sgscore2', 'sgscore3', 'sharpnr', 'sigmagap', 'sigmagapbig', 'sigmagnr', 'simag1', 'simag2', 'simag3', 'sky', 'srmag1', 'srmag2', 'srmag3', 'ssdistnr', 'ssmagnr', 'ssnamenr', 'ssnrms', 'sumrat', 'szmag1', 'szmag2', 'szmag3', 'tblid', 'tooflag', 'xpos', 'ypos', 'zpclrcov', 'zpmed']
     expanded_extra_fields = df.drop('prv_candidates').drop('fp_hists')
 
-    expanded_extra_fields = expanded_extra_fields.withColumn("has_stamp", lit(False))\
+    expanded_extra_fields = expanded_extra_fields.withColumn("has_stamp", lit(True))\
                                                  .withColumn("forced", lit(False))\
                                                  .withColumn("parent_candid", lit("None"))
     
-    extra_fields_columns.remove('prv_candidates')
-    extra_fields_columns.remove('fp_hists')
-    expanded_extra_fields = expanded_extra_fields.withColumn("extra_fields", struct([col(c) for c in extra_fields_columns]))
-    expanded_extra_fields = expanded_extra_fields.drop(*extra_fields_columns)
     sorted_columns_df = sorted(expanded_extra_fields.columns)
     expanded_extra_fields = expanded_extra_fields.select(*sorted_columns_df)
     return expanded_extra_fields
 
 def expand_fields_adding_alert_data(df):
     unnested_extra_fields = df
-    unnested_extra_fields = unnested_extra_fields.select(*['oid', 'aid', 'ra', 'dec', 'candid', 'fp_hists', 'prv_candidates'])
+    unnested_extra_fields = unnested_extra_fields.select(*['oid', 'aid', 'ra', 'dec', 'candid', 'fp_hists', 'prv_candidates', 'mjd'])
     unnested_extra_fields = unnested_extra_fields.withColumnRenamed('candid', 'candid_alert')\
                                                  .withColumnRenamed('ra', 'ra_alert')\
                                                  .withColumnRenamed('dec', 'dec_alert')\
                                                  .withColumnRenamed('oid', 'oid_alert')\
+                                                 .withColumnRenamed('mjd', 'mjd_alert')\
                                                  .withColumnRenamed('aid', 'aid_alert')
     
     # Here we have the extra fields with the necessary alert fields for the parsing of each type of detection
@@ -54,8 +50,6 @@ def expand_fields_adding_alert_data(df):
     sorted_columns_fp_hists = sorted(fp_hists.columns)
     fp_hists = fp_hists.select(*sorted_columns_fp_hists)
 
-    #! Revisar bien las columnas de las cosas que se quedan para dets/fphists/ndets
-
     return detections, non_detections, fp_hists
 
 def rename_columns(df, type_of_detection):
@@ -75,57 +69,34 @@ def rename_columns(df, type_of_detection):
 def apply_transformations(df, type_of_detection):
     if type_of_detection == "previous_detection":
         df = df.withColumn("candid",col("candid").cast(StringType())) \
-               .withColumn("oid",col("oid").cast(StringType())) 
-        df = df.withColumn("tid", lit("ZTF"))\
+               .withColumn("oid",col("oid").cast(StringType()))\
+           .withColumn("tid", lit("ZTF"))\
            .withColumn("sid", lit("ZTF"))\
            .withColumn("unparsed_isdiffpos", col("isdiffpos"))\
            .withColumn("unparsed_jd", col("mjd"))\
-           .withColumn("unparsed_fid", col("fid"))\
-           .withColumn("fid", when(df["fid"] == 1, "g")
-                             .when(df["fid"] == 2, "r")
+           .withColumn("parsed_fid", when(col("fid") == 1, "g")
+                             .when(col("fid") == 2, "r")
                              .otherwise("i"))\
            .withColumn("mjd", col("mjd")- 2400000.5)\
-           .withColumn("isdiffpos", when(df["isdiffpos"] == "t", 1)
-                                   .when(df["isdiffpos"] == "1", 1)
-                                   .otherwise(-1))
-        df = df.withColumn("e_dec",  when(df["fid"] == "g", 0.06499999761581421)
-                                .when(df["fid"] == "r", 0.08500000089406967)
+           .withColumn("isdiffpos", when(col("isdiffpos") == "t", 1)
+                                   .when(col("isdiffpos") == "1", 1)
+                                   .otherwise(-1))\
+            .withColumn("e_dec",  when(col("fid") == "1", 0.065)
+                                .when(col("fid") == "2", 0.085)
                                 .otherwise(0.01))
-        df = df.withColumn("e_dec_decimal",  when(df["fid"] == "g", 0.065)
-                                .when(df["fid"] == "r", 0.085)
-                                .otherwise(0.01))
-        
         condition = cos(radians(col("dec"))) != 0
-        calculation = when(condition, col("e_dec_decimal") / abs(cos(radians(col("dec"))))).otherwise(float('nan'))
+        calculation = when(condition, col("e_dec") / abs(cos(radians(col("dec"))))).otherwise(float('nan'))
         df = df.withColumn("e_ra", calculation)
         df = df.withColumn("parent_candid", col("candid_alert"))
-        df = df.drop('ra_alert', 'dec_alert', 'candid_alert', 'e_dec_decimal')
-
-        import numpy
-        from pyspark.sql.types import FloatType
-        def format_and_convert(value):
-            # Convert the value to numpy float32
-            float32_value = numpy.float32(value)
-            # Format to string with high precision (24 decimal places)
-            formatted_value = format(float32_value, '.24f')
-            # Convert the formatted string back to float
-            return float(formatted_value)
-
-        # Register the function as a UDF
-        format_and_convert_udf = udf(format_and_convert, FloatType())
-
-        # Apply the UDF to the 'e_ra' column
-        df = df.withColumn("e_ra", format_and_convert_udf(df["e_ra"]))
-
+        df = df.drop('ra_alert', 'dec_alert', 'candid_alert')
 
 
     if type_of_detection == 'non_detection':
         df = df.withColumn("oid",col("oid").cast(StringType()))
         df = df.withColumn("tid", lit("ZTF"))\
                 .withColumn("sid", lit("ZTF"))\
-                .withColumn("unparsed_fid", col("fid"))\
-                .withColumn("fid", when(df["fid"] == 1, "g")
-                             .when(df["fid"] == 2, "r")
+                .withColumn("parsed_fid", when(col("fid") == 1, "g")
+                             .when(col("fid") == 2, "r")
                              .otherwise("i"))\
                 .withColumn("unparsed_jd", col("mjd"))\
                 .withColumn("mjd", col("mjd")- 2400000.5)\
@@ -136,9 +107,8 @@ def apply_transformations(df, type_of_detection):
     if type_of_detection == 'forced_photometries':
         df = df.withColumn("tid", lit("ZTF"))\
                .withColumn("sid", lit("ZTF"))\
-               .withColumn("unparsed_fid", col("fid"))\
-               .withColumn("fid", when(df["fid"] == 1, "g")
-                             .when(df["fid"] == 2, "r")
+               .withColumn("parsed_fid", when(col("fid") == 1, "g")
+                             .when(col("fid") == 2, "r")
                              .otherwise("i"))\
                .withColumn("unparsed_jd", col("mjd"))\
                .withColumn("mjd", col("mjd")- 2400000.5)\
@@ -147,10 +117,11 @@ def apply_transformations(df, type_of_detection):
                .withColumn("parent_candid", col("candid_alert"))\
                .withColumn("e_dec", lit(0))\
                .withColumn("e_ra", lit(0))
-        df = df.withColumn("isdiffpos", when(df["forcediffimflux"]>=0, 1)
+        df = df.withColumn("isdiffpos", when(col("forcediffimflux")>=0, 1)
                                         .otherwise(-1))
         df = df.drop('ra_alert', 'dec_alert', 'candid_alert')
     return df
+
 
 def parse_extra_fields(df, type_of_detection):
     if type_of_detection=="previous_detection":
@@ -167,12 +138,13 @@ def parse_extra_fields(df, type_of_detection):
         "ra",
         "dec",
         "mag",
+        "mjd_alert",
         "e_mag",
         "isdiffpos",
         "e_ra",
         "e_dec",
         "unparsed_jd",
-        "unparsed_fid", 
+        "parsed_fid", 
         "unparsed_isdiffpos"
         ]
     if type_of_detection=="forced_photometries":
@@ -185,6 +157,7 @@ def parse_extra_fields(df, type_of_detection):
         "candid",
         "parent_candid",
         "mjd",
+        "mjd_alert",
         "fid",
         "ra",
         "dec",
@@ -194,7 +167,7 @@ def parse_extra_fields(df, type_of_detection):
         "e_ra",
         "e_dec",
         "unparsed_jd",
-        "unparsed_fid"
+        "parsed_fid"
         ]
     if type_of_detection=="non_detection":
         not_extrafields = [
@@ -205,7 +178,7 @@ def parse_extra_fields(df, type_of_detection):
         "mjd",
         "fid",
         "unparsed_jd",
-        "unparsed_fid",
+        "parsed_fid",
         "diffmaglim",
         "parent_candid" #### for joining purposes 
         ]
@@ -222,10 +195,11 @@ def parse_extra_fields(df, type_of_detection):
     return df
 
 
+
 def parser_detections_and_fp(df_candidate, type_of_detection):
     df_candidate = rename_columns(df_candidate, type_of_detection)
     df_candidate = apply_transformations(df_candidate, type_of_detection)
-    df_candidate = parse_extra_fields(df_candidate, type_of_detection)
+    #df_candidate = parse_extra_fields(df_candidate, type_of_detection)
     return df_candidate
 
 def parse_message_detections(df_detections):
@@ -235,9 +209,6 @@ def parse_message_detections(df_detections):
     df_detections = df_detections.select(sorted(df_detections.columns))
     return df_detections
 
-def parse_message_non_detections(df_non_detections):
-        df_non_detections = parser_detections_and_fp(df_non_detections, "non_detection")
-        return df_non_detections
 
 def isclose(a, b, rtol=1e-05, atol=1e-08):
     abs_diff = abs(a - b)
@@ -265,12 +236,10 @@ def calculate_mag(fp_data):
     return fp_data
 
 def parse_message_forced_photometry(forced_photometry):
-    forced_photometry = forced_photometry.withColumn("candid", F.concat(forced_photometry['oid_alert'], F.lit('_'), forced_photometry['pid']))
-    #! DISCARTING THE FORCED PHOTOMETRY FOR WHEN forcediffimflux == -99999 or forcediffimfluxunc == -99999
+    forced_photometry = forced_photometry.withColumn("candid", F.concat(F.col("oid_alert"), F.lit('_'), F.col("pid")))
+    # DISCARTING THE FORCED PHOTOMETRY WHEN forcediffimflux == -99999 or forcediffimfluxunc == -99999
     forced_photometry = forced_photometry.filter(col('forcediffimflux')!=-99999)
     forced_photometry = forced_photometry.filter(col('forcediffimfluxunc')!=-99999)
-    #! IF WE WANT TO KEEP THESE DATA IN THE DATABASE, WE MUST REMOVE THE PREVIOUS TWO LINES.
-    #! ANOTHER OPTION IS TO ADD ANOTHER COLUMN WITH A FLAG FOR "NULL" VALUES.
 
     forced_photometry = calculate_mag(forced_photometry)
     forced_photometry = forced_photometry.withColumn("magpsf",forced_photometry['mag']).drop('mag')
@@ -279,6 +248,10 @@ def parse_message_forced_photometry(forced_photometry):
     parsed_photometry = parsed_photometry.withColumn("has_stamp", F.lit(False)).withColumn("forced", F.lit(True))
     parsed_photometry = parsed_photometry.select(sorted(parsed_photometry.columns))
     return parsed_photometry
+
+def parse_message_non_detections(df_non_detections):
+        df_non_detections = parser_detections_and_fp(df_non_detections, "non_detection")
+        return df_non_detections
 
 def parse_messages(df):
     detections, non_detections, fp_hists = expand_fields_adding_alert_data(df)
@@ -290,17 +263,27 @@ def parse_messages(df):
 
 def restruct_detections(df):
     detections_parsed, non_detections_parsed, forced_photometry_parsed = parse_messages(df)
-    grouped_dets = detections_parsed.groupBy('parent_candid', 'oid') \
+    grouped_dets = detections_parsed.groupBy(col('parent_candid'), col('oid')) \
                                     .agg(collect_list(struct(*[col(c) for c in detections_parsed.columns])).alias("detections")) \
                                     .withColumnRenamed('parent_candid', 'candid')
     
-    grouped_phots = forced_photometry_parsed.groupBy('parent_candid', 'oid') \
-                                    .agg(collect_list(struct(*[col(c) for c in forced_photometry_parsed.columns])).alias("forced_photometries")) \
-                                    .withColumnRenamed('parent_candid', 'candid')
-    
-    grouped_ndets = non_detections_parsed.groupBy('parent_candid', 'oid') \
-                                    .agg(collect_list(struct(*[col(c) for c in non_detections_parsed.columns])).alias("non_detections")) \
-                                    .withColumnRenamed('parent_candid', 'candid')
+    grouped_phots = (
+    forced_photometry_parsed
+    .groupBy(col('parent_candid'), col('oid'))
+    .agg(
+        collect_list(struct(*[col(c) for c in forced_photometry_parsed.columns])).alias("forced_photometries")
+    )
+    .withColumnRenamed('parent_candid', 'candid')
+    )
+
+    grouped_ndets = (
+    non_detections_parsed
+    .groupBy(col('parent_candid'), col('oid'))
+    .agg(
+        collect_list(struct(*[col(c) for c in non_detections_parsed.columns])).alias("non_detections")
+    )
+    .withColumnRenamed('parent_candid', 'candid')
+    )
     
     return grouped_dets, grouped_phots, grouped_ndets
 
